@@ -7,45 +7,57 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: #f4f6f8;
   color: #1f2937;
+  padding-bottom: 30px;
 }
 
 header {
   background: #0f172a;
   color: white;
-  padding: 18px;
+  padding: 38px 18px 28px;
   text-align: center;
 }
 
 header h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 28px;
+  font-weight: 800;
 }
 
 header p {
-  margin: 6px 0 0;
-  opacity: 0.8;
+  margin: 8px 0 0;
+  opacity: 0.85;
+  font-size: 20px;
 }
 
 nav {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
   position: sticky;
   top: 0;
-  z-index: 10;
-  background: white;
-  border-bottom: 1px solid #ddd;
+  z-index: 999;
+  background: #ffffff;
+  padding: 10px;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
 }
 
 nav button {
-  flex: 1;
-  padding: 14px 8px;
+  display: block;
+  width: 100%;
+  padding: 12px 6px;
   border: none;
-  background: white;
-  font-weight: 700;
+  border-radius: 12px;
+  background: #e5e7eb;
+  color: #111827;
+  font-weight: 800;
   font-size: 14px;
+  margin: 0;
 }
 
 nav button:active {
-  background: #e5e7eb;
+  background: #2563eb;
+  color: white;
 }
 
 main {
@@ -62,59 +74,63 @@ main {
 
 .selector {
   background: white;
-  padding: 12px;
-  border-radius: 12px;
-  margin-bottom: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .selector label {
   display: block;
-  font-weight: 700;
-  margin-bottom: 6px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  font-size: 18px;
 }
 
 select,
 input {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid #cbd5e1;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 16px;
+  background: white;
 }
 
 .month {
   background: white;
-  border-radius: 14px;
-  margin-bottom: 14px;
-  padding: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border-radius: 18px;
+  margin-bottom: 16px;
+  padding: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
 .month h3 {
-  margin: 4px 0 10px;
+  margin: 6px 0 14px;
   text-align: center;
+  font-size: 24px;
 }
 
 .days,
 .weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 6px;
 }
 
 .weekdays div {
-  font-size: 11px;
+  font-size: 13px;
   text-align: center;
-  font-weight: 700;
+  font-weight: 800;
   color: #64748b;
 }
 
 .day {
-  min-height: 42px;
-  border-radius: 8px;
+  min-height: 48px;
+  border-radius: 10px;
   background: #f1f5f9;
-  padding: 4px;
-  font-size: 12px;
+  padding: 5px;
+  font-size: 15px;
   text-align: center;
   cursor: pointer;
   border: 2px solid transparent;
@@ -122,13 +138,14 @@ input {
 
 .day.marked {
   color: white;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .day small {
   display: block;
-  font-size: 9px;
+  font-size: 8px;
   margin-top: 2px;
+  line-height: 1.05;
 }
 
 .empty {
@@ -138,25 +155,27 @@ input {
 .counter-card,
 .history-card {
   background: white;
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 10px;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .counter-card h3 {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
 }
 
 .counter-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
 
 .counter-row label {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 4px;
+  display: block;
 }
 
 button {
@@ -166,7 +185,7 @@ button {
   border-radius: 12px;
   background: #2563eb;
   color: white;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 15px;
   margin-top: 8px;
 }
@@ -177,9 +196,9 @@ button.danger {
 
 .badge {
   display: inline-block;
-  padding: 4px 8px;
+  padding: 5px 9px;
   border-radius: 999px;
   color: white;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
 }
