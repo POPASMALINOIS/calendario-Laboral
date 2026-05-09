@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calendario Laboral</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+</head>
+<body>
+  <header>
+    <h1>Calendario Laboral</h1>
+    <p id="yearLabel"></p>
+  </header>
+
+  <nav>
+    <button onclick="showTab('calendario')">Calendario</button>
+    <button onclick="showTab('contadores')">Contadores</button>
+    <button onclick="showTab('permisos')">Permisos</button>
+  </nav>
+
+  <main>
+    <section id="calendario" class="tab active">
+      <div class="selector">
+        <label>Categoría</label>
+        <select id="categorySelect"></select>
+      </div>
+      <div id="calendarGrid"></div>
+    </section>
+
+    <section id="contadores" class="tab">
+      <h2>Contadores</h2>
+      <div id="counterList"></div>
+      <button onclick="saveCounters()">Guardar contadores</button>
+    </section>
+
+    <section id="permisos" class="tab">
+      <h2>Historial de permisos</h2>
+      <div id="historyList"></div>
+      <button onclick="exportData()">Exportar datos</button>
+      <button class="danger" onclick="clearAll()">Borrar todo</button>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
