@@ -21,6 +21,17 @@ function saveData() {
   localStorage.setItem("calendarioLaboralData", JSON.stringify(data));
 }
 
+function ensureCounters() {
+  categories.forEach(cat => {
+    if (!data.counters[cat.name]) {
+      data.counters[cat.name] = {
+        total: 0
+      };
+    }
+  });
+  saveData();
+}
+
 function showTab(id) {
   document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
   document.getElementById(id).classList.add("active");
@@ -33,6 +44,8 @@ function init() {
   document.getElementById("yearLabel").textContent = "Año " + year;
 
   const select = document.getElementById("categorySelect");
+  select.innerHTML = "";
+
   categories.forEach(cat => {
     const option = document.createElement("option");
     option.value = cat.name;
@@ -40,16 +53,8 @@ function init() {
     select.appendChild(option);
   });
 
-  categories.forEach(cat => {
-    if (!data.counters[cat.name]) {
-      data.counters[cat.name] = {
-        total: 0
-      };
-    }
-  });
-
+  ensureCounters();
   renderCalendar();
-  saveData();
 }
 
 function renderCalendar() {
@@ -114,7 +119,6 @@ function renderCalendar() {
       }
 
       day.onclick = () => markDay(dateKey);
-
       days.appendChild(day);
     }
 
@@ -125,22 +129,43 @@ function renderCalendar() {
 
 function markDay(dateKey) {
   const selected = document.getElementById("categorySelect").value;
+  const cat = categories.find(c => c.name === selected);
 
   if (data.marks[dateKey]) {
-    const confirmDelete = confirm("Este día ya está marcado. ¿Quieres borrar la marca?");
-    if (confirmDelete) {
+    const action = confirm("Este día ya está marcado. Pulsa Aceptar para borrar la marca o Cancelar para cambiarla por la categoría seleccionada.");
+
+    if (action) {
       delete data.marks[dateKey];
     } else {
       data.marks[dateKey] = {
         category: selected,
-        amount: getDefaultAmount(selected),
+        amount: cat.unit === "horas" ? 1 : 1,
         createdAt: new Date().toISOString()
       };
     }
   } else {
+    let amount = 1;
+
+    if (cat.unit === "horas") {
+      const input = prompt(`¿Cuántas horas quieres descontar de "${selected}"?`, "1");
+      if (input === null || input === "") return;
+      amount = Number(input);
+      if (isNaN(amount) || amount <= 0) {
+        alert("Introduce un número de horas válido.");
+        return;
+      }
+    }
+
+    const remaining = getRemaining(selected);
+
+    if (data.counters[selected]?.total > 0 && amount > remaining) {
+      const proceed = confirm(`Atención: estás superando el saldo disponible. Restante actual: ${remaining} ${cat.unit}. ¿Quieres continuar igualmente?`);
+      if (!proceed) return;
+    }
+
     data.marks[dateKey] = {
       category: selected,
-      amount: getDefaultAmount(selected),
+      amount: amount,
       createdAt: new Date().toISOString()
     };
   }
@@ -149,43 +174,74 @@ function markDay(dateKey) {
   renderCalendar();
 }
 
-function getDefaultAmount(categoryName) {
-  const cat = categories.find(c => c.name === categoryName);
-  return cat && cat.unit === "horas" ? 1 : 1;
-}
-
 function renderCounters() {
+  ensureCounters();
+
   const list = document.getElementById("counterList");
   list.innerHTML = "";
 
   categories.forEach(cat => {
     const used = calculateUsed(cat.name);
-    const total = data.counters[cat.name]?.total || 0;
+    const total = Number(data.counters[cat.name]?.total || 0);
     const remaining = total - used;
 
     const card = document.createElement("div");
     card.className = "counter-card";
 
     card.innerHTML = `
-      <h3>${cat.name}</h3>
+      <h3>
+        <span class="badge" style="background:${cat.color}">
+          ${cat.name}
+        </span>
+      </h3>
+
       <div class="counter-row">
         <div>
-          <label>Total ${cat.unit}</label>
-          <input type="number" step="0.5" value="${total}" data-counter="${cat.name}">
+          <label>Total disponible</label>
+          <input 
+            type="number" 
+            step="0.5" 
+            min="0"
+            value="${total}" 
+            data-counter="${cat.name}"
+          >
         </div>
+
         <div>
           <label>Usado</label>
-          <input type="text" value="${used} ${cat.unit}" disabled>
+          <input 
+            type="text" 
+            value="${used} ${cat.unit}" 
+            disabled
+          >
         </div>
+
         <div>
           <label>Restante</label>
-          <input type="text" value="${remaining} ${cat.unit}" disabled>
+          <input 
+            type="text" 
+            value="${remaining} ${cat.unit}" 
+            disabled
+          >
         </div>
       </div>
+
+      <p style="font-size:13px; margin-bottom:0;">
+        Unidad de control: <strong>${cat.unit}</strong>
+      </p>
     `;
 
     list.appendChild(card);
   });
+
+  const info = document.createElement("div");
+  info.className = "counter-card";
+  info.innerHTML = `
+    <h3>Resumen</h3>
+    <p>Introduce en cada categoría los días u horas que tienes disponibles.</p>
+    <p>La aplicación descontará automáticamente lo utilizado según los días que marques en el calendario.</p>
+  `;
+  list.prepend(info);
 }
 
 function saveCounters() {
@@ -198,7 +254,7 @@ function saveCounters() {
 
   saveData();
   renderCounters();
-  alert("Contadores guardados");
+  alert("Contadores guardados correctamente.");
 }
 
 function calculateUsed(categoryName) {
@@ -211,6 +267,12 @@ function calculateUsed(categoryName) {
   });
 
   return total;
+}
+
+function getRemaining(categoryName) {
+  const total = Number(data.counters[categoryName]?.total || 0);
+  const used = calculateUsed(categoryName);
+  return total - used;
 }
 
 function renderHistory() {
@@ -231,8 +293,12 @@ function renderHistory() {
 
     card.innerHTML = `
       <p><strong>${formatDate(date)}</strong></p>
-      <p><span class="badge" style="background:${cat?.color || "#333"}">${item.category}</span></p>
-      <p>Cantidad: ${item.amount} ${cat?.unit || ""}</p>
+      <p>
+        <span class="badge" style="background:${cat?.color || "#333"}">
+          ${item.category}
+        </span>
+      </p>
+      <p>Cantidad consumida: <strong>${item.amount} ${cat?.unit || ""}</strong></p>
       <button onclick="editAmount('${date}')">Editar días/horas</button>
       <button class="danger" onclick="deleteMark('${date}')">Eliminar</button>
     `;
@@ -242,11 +308,21 @@ function renderHistory() {
 }
 
 function editAmount(date) {
-  const current = data.marks[date].amount || 1;
-  const newAmount = prompt("Introduce días u horas consumidas:", current);
+  const item = data.marks[date];
+  const cat = categories.find(c => c.name === item.category);
+  const current = item.amount || 1;
+
+  const newAmount = prompt(`Introduce la nueva cantidad en ${cat?.unit || "unidades"}:`, current);
 
   if (newAmount !== null && newAmount !== "") {
-    data.marks[date].amount = Number(newAmount);
+    const value = Number(newAmount);
+
+    if (isNaN(value) || value <= 0) {
+      alert("Introduce un número válido.");
+      return;
+    }
+
+    data.marks[date].amount = value;
     saveData();
     renderHistory();
     renderCalendar();
@@ -254,7 +330,7 @@ function editAmount(date) {
 }
 
 function deleteMark(date) {
-  if (confirm("¿Eliminar este permiso?")) {
+  if (confirm("¿Eliminar este permiso del historial y del calendario?")) {
     delete data.marks[date];
     saveData();
     renderHistory();
@@ -281,7 +357,7 @@ function exportData() {
 }
 
 function clearAll() {
-  if (confirm("¿Seguro que quieres borrar todos los datos?")) {
+  if (confirm("¿Seguro que quieres borrar todos los datos? Esta acción no se puede deshacer.")) {
     localStorage.removeItem("calendarioLaboralData");
     location.reload();
   }
