@@ -2,46 +2,65 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Calendario Laboral</title>
-  <link rel="stylesheet" href="styles.css" />
+
+  <!-- CSS actualizado -->
+  <link rel="stylesheet" href="styles.css?v=4" />
+
+  <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Calendario Laboral" />
 </head>
 <body>
+
   <header>
     <h1>Calendario Laboral</h1>
     <p id="yearLabel"></p>
   </header>
 
+  <!-- Navegación visible -->
   <nav>
-    <button onclick="showTab('calendario')">Calendario</button>
-    <button onclick="showTab('contadores')">Contadores</button>
-    <button onclick="showTab('permisos')">Permisos</button>
+    <button type="button" onclick="showTab('calendario')">Calendario</button>
+    <button type="button" onclick="showTab('contadores')">Contadores</button>
+    <button type="button" onclick="showTab('permisos')">Permisos</button>
   </nav>
 
   <main>
+
+    <!-- CALENDARIO -->
     <section id="calendario" class="tab active">
       <div class="selector">
-        <label>Categoría</label>
+        <label for="categorySelect">Categoría</label>
         <select id="categorySelect"></select>
       </div>
+
       <div id="calendarGrid"></div>
     </section>
 
+    <!-- CONTADORES -->
     <section id="contadores" class="tab">
-      <h2>Contadores</h2>
+      <h2>Contadores de permisos</h2>
       <div id="counterList"></div>
-      <button onclick="saveCounters()">Guardar contadores</button>
+      <button type="button" onclick="saveCounters()">Guardar contadores</button>
     </section>
 
+    <!-- HISTORIAL -->
     <section id="permisos" class="tab">
       <h2>Historial de permisos</h2>
       <div id="historyList"></div>
-      <button onclick="exportData()">Exportar datos</button>
-      <button class="danger" onclick="clearAll()">Borrar todo</button>
+
+      <button type="button" onclick="exportData()">Exportar datos</button>
+      <button type="button" class="danger" onclick="clearAll()">Borrar todo</button>
     </section>
+
   </main>
 
-  <script src="app.js"></script>
+  <!-- JS actualizado -->
+  <script src="app.js?v=4"></script>
+
 </body>
 </html>
