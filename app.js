@@ -1,4 +1,5 @@
-const year = new Date().getFullYear();
+const currentYear = new Date().getFullYear();
+let selectedYear = Number(localStorage.getItem("selectedCalendarYear")) || currentYear;
 
 const categories = [
   { name: "Turno Mañana", color: "#2563eb", unit: "días" },
@@ -28,23 +29,13 @@ function saveData() {
 
 function ensureCounters() {
   categories.forEach(cat => {
-    if (!data.counters[cat.name]) {
-      data.counters[cat.name] = { total: 0 };
-    }
+    if (!data.counters[cat.name]) data.counters[cat.name] = { total: 0 };
   });
   saveData();
 }
 
-function showTab(id) {
-  document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-
-  if (id === "contadores") renderCounters();
-  if (id === "permisos") renderPermits();
-}
-
 function init() {
-  document.getElementById("yearLabel").textContent = "Año " + year;
+  document.getElementById("yearLabel").textContent = "Año " + selectedYear;
 
   const select = document.getElementById("categorySelect");
   select.innerHTML = "";
@@ -56,8 +47,47 @@ function init() {
     select.appendChild(option);
   });
 
+  createYearSelector();
   ensureCounters();
   renderCalendar();
+}
+
+function createYearSelector() {
+  const selectorBox = document.querySelector(".selector");
+
+  if (!document.getElementById("yearSelect")) {
+    const wrapper = document.createElement("div");
+    wrapper.style.marginTop = "12px";
+
+    let options = "";
+    for (let y = currentYear - 2; y <= currentYear + 6; y++) {
+      options += `<option value="${y}" ${y === selectedYear ? "selected" : ""}>${y}</option>`;
+    }
+
+    wrapper.innerHTML = `
+      <label for="yearSelect">Año del calendario</label>
+      <select id="yearSelect" onchange="changeYear()">
+        ${options}
+      </select>
+    `;
+
+    selectorBox.appendChild(wrapper);
+  }
+}
+
+function changeYear() {
+  selectedYear = Number(document.getElementById("yearSelect").value);
+  localStorage.setItem("selectedCalendarYear", selectedYear);
+  document.getElementById("yearLabel").textContent = "Año " + selectedYear;
+  renderCalendar();
+}
+
+function showTab(id) {
+  document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+
+  if (id === "contadores") renderCounters();
+  if (id === "permisos") renderPermits();
 }
 
 function renderCalendar() {
@@ -70,6 +100,7 @@ function renderCalendar() {
   ];
 
   const weekDays = ["L", "M", "X", "J", "V", "S", "D"];
+  const holidays = getSpanishNationalHolidays(selectedYear);
 
   for (let month = 0; month < 12; month++) {
     const box = document.createElement("div");
@@ -93,7 +124,7 @@ function renderCalendar() {
     const days = document.createElement("div");
     days.className = "days";
 
-    const firstDay = new Date(year, month, 1);
+    const firstDay = new Date(selectedYear, month, 1);
     let start = firstDay.getDay();
     start = start === 0 ? 6 : start - 1;
 
@@ -103,27 +134,37 @@ function renderCalendar() {
       days.appendChild(empty);
     }
 
-    const totalDays = new Date(year, month + 1, 0).getDate();
+    const totalDays = new Date(selectedYear, month + 1, 0).getDate();
 
     for (let d = 1; d <= totalDays; d++) {
-      const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const dateKey = `${selectedYear}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       const day = document.createElement("div");
       day.className = "day";
-      day.textContent = d;
 
-      if (data.marks[dateKey]) {
-        const cat = categories.find(c => c.name === data.marks[dateKey].category);
-        if (cat) {
-          day.classList.add("marked");
-          day.style.background = cat.color;
+      if (holidays[dateKey]) day.classList.add("holiday");
 
-          const small = document.createElement("small");
-          small.textContent = cat.name;
-          day.appendChild(small);
-        }
+      let html = `<strong>${d}</strong>`;
+
+      if (holidays[dateKey]) {
+        html += `<span class="holiday-chip">Festivo</span>`;
       }
 
+      const marks = Array.isArray(data.marks[dateKey])
+        ? data.marks[dateKey]
+        : data.marks[dateKey]
+          ? [data.marks[dateKey]]
+          : [];
+
+      marks.forEach(item => {
+        const cat = categories.find(c => c.name === item.category);
+        if (cat) {
+          html += `<span class="cat-chip" style="background:${cat.color}">${cat.name}</span>`;
+        }
+      });
+
+      day.innerHTML = html;
       day.onclick = () => markDay(dateKey);
+
       days.appendChild(day);
     }
 
@@ -136,16 +177,17 @@ function markDay(dateKey) {
   const selected = document.getElementById("categorySelect").value;
   const cat = categories.find(c => c.name === selected);
 
-  if (data.marks[dateKey]) {
-    const action = confirm("Este día ya está marcado. Aceptar: borrar. Cancelar: cambiar categoría.");
-    if (action) {
-      delete data.marks[dateKey];
-    } else {
-      data.marks[dateKey] = {
-        category: selected,
-        amount: 1,
-        createdAt: new Date().toISOString()
-      };
+  if (!Array.isArray(data.marks[dateKey])) {
+    data.marks[dateKey] = data.marks[dateKey] ? [data.marks[dateKey]] : [];
+  }
+
+  const alreadyExists = data.marks[dateKey].some(m => m.category === selected);
+
+  if (alreadyExists) {
+    const remove = confirm("Esta categoría ya está marcada en este día. ¿Quieres quitarla?");
+    if (remove) {
+      data.marks[dateKey] = data.marks[dateKey].filter(m => m.category !== selected);
+      if (data.marks[dateKey].length === 0) delete data.marks[dateKey];
     }
   } else {
     let amount = 1;
@@ -162,11 +204,11 @@ function markDay(dateKey) {
       }
     }
 
-    data.marks[dateKey] = {
+    data.marks[dateKey].push({
       category: selected,
       amount,
       createdAt: new Date().toISOString()
-    };
+    });
   }
 
   saveData();
@@ -215,9 +257,7 @@ function renderCounters() {
 function saveCounters() {
   document.querySelectorAll("[data-counter]").forEach(input => {
     const name = input.getAttribute("data-counter");
-    data.counters[name] = {
-      total: Number(input.value || 0)
-    };
+    data.counters[name] = { total: Number(input.value || 0) };
   });
 
   saveData();
@@ -228,10 +268,11 @@ function saveCounters() {
 function calculateUsed(categoryName) {
   let total = 0;
 
-  Object.values(data.marks).forEach(item => {
-    if (item.category === categoryName) {
-      total += Number(item.amount || 1);
-    }
+  Object.values(data.marks).forEach(dayMarks => {
+    const marks = Array.isArray(dayMarks) ? dayMarks : [dayMarks];
+    marks.forEach(item => {
+      if (item.category === categoryName) total += Number(item.amount || 1);
+    });
   });
 
   return total;
@@ -254,9 +295,7 @@ function renderPermits() {
       <input type="date" id="permitDate">
 
       <label>Tipo de permiso</label>
-      <select id="permitType">
-        ${options}
-      </select>
+      <select id="permitType">${options}</select>
 
       <label>Observación</label>
       <input type="text" id="permitNote" placeholder="Ej: médico, colegio, gestión personal...">
@@ -319,6 +358,45 @@ function deletePermit(index) {
 
   saveData();
   renderPermits();
+}
+
+function getSpanishNationalHolidays(year) {
+  const easter = getEasterDate(year);
+  const goodFriday = new Date(easter);
+  goodFriday.setDate(easter.getDate() - 2);
+
+  const holidays = {};
+
+  const add = (month, day, name) => {
+    const key = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    holidays[key] = name;
+  };
+
+  add(1, 1, "Año Nuevo");
+  add(1, 6, "Reyes");
+  add(goodFriday.getMonth() + 1, goodFriday.getDate(), "Viernes Santo");
+  add(5, 1, "Fiesta del Trabajo");
+  add(8, 15, "Asunción");
+  add(10, 12, "Fiesta Nacional");
+  add(11, 1, "Todos los Santos");
+  add(12, 6, "Constitución");
+  add(12, 8, "Inmaculada");
+  add(12, 25, "Navidad");
+
+  return holidays;
+}
+
+function getEasterDate(year) {
+  const f = Math.floor;
+  const G = year % 19;
+  const C = f(year / 100);
+  const H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30;
+  const I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11));
+  const J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7;
+  const L = I - J;
+  const month = 3 + f((L + 40) / 44);
+  const day = L + 28 - 31 * f(month / 4);
+  return new Date(year, month - 1, day);
 }
 
 function formatDate(date) {
