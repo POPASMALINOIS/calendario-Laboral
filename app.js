@@ -12,10 +12,15 @@ const categories = [
   { name: "Acompañamiento hijos", color: "#9333ea", unit: "horas" }
 ];
 
+const permitCategories = categories.filter(c => c.name !== "Turno Mañana");
+
 let data = JSON.parse(localStorage.getItem("calendarioLaboralData")) || {
   marks: {},
-  counters: {}
+  counters: {},
+  permits: []
 };
+
+if (!data.permits) data.permits = [];
 
 function saveData() {
   localStorage.setItem("calendarioLaboralData", JSON.stringify(data));
@@ -24,9 +29,7 @@ function saveData() {
 function ensureCounters() {
   categories.forEach(cat => {
     if (!data.counters[cat.name]) {
-      data.counters[cat.name] = {
-        total: 0
-      };
+      data.counters[cat.name] = { total: 0 };
     }
   });
   saveData();
@@ -37,7 +40,7 @@ function showTab(id) {
   document.getElementById(id).classList.add("active");
 
   if (id === "contadores") renderCounters();
-  if (id === "permisos") renderHistory();
+  if (id === "permisos") renderPermits();
 }
 
 function init() {
@@ -78,11 +81,13 @@ function renderCalendar() {
 
     const weekdays = document.createElement("div");
     weekdays.className = "weekdays";
+
     weekDays.forEach(d => {
       const el = document.createElement("div");
       el.textContent = d;
       weekdays.appendChild(el);
     });
+
     box.appendChild(weekdays);
 
     const days = document.createElement("div");
@@ -132,14 +137,13 @@ function markDay(dateKey) {
   const cat = categories.find(c => c.name === selected);
 
   if (data.marks[dateKey]) {
-    const action = confirm("Este día ya está marcado. Pulsa Aceptar para borrar la marca o Cancelar para cambiarla por la categoría seleccionada.");
-
+    const action = confirm("Este día ya está marcado. Aceptar: borrar. Cancelar: cambiar categoría.");
     if (action) {
       delete data.marks[dateKey];
     } else {
       data.marks[dateKey] = {
         category: selected,
-        amount: cat.unit === "horas" ? 1 : 1,
+        amount: 1,
         createdAt: new Date().toISOString()
       };
     }
@@ -149,23 +153,18 @@ function markDay(dateKey) {
     if (cat.unit === "horas") {
       const input = prompt(`¿Cuántas horas quieres descontar de "${selected}"?`, "1");
       if (input === null || input === "") return;
+
       amount = Number(input);
+
       if (isNaN(amount) || amount <= 0) {
-        alert("Introduce un número de horas válido.");
+        alert("Introduce un número válido.");
         return;
       }
     }
 
-    const remaining = getRemaining(selected);
-
-    if (data.counters[selected]?.total > 0 && amount > remaining) {
-      const proceed = confirm(`Atención: estás superando el saldo disponible. Restante actual: ${remaining} ${cat.unit}. ¿Quieres continuar igualmente?`);
-      if (!proceed) return;
-    }
-
     data.marks[dateKey] = {
       category: selected,
-      amount: amount,
+      amount,
       createdAt: new Date().toISOString()
     };
   }
@@ -189,59 +188,28 @@ function renderCounters() {
     card.className = "counter-card";
 
     card.innerHTML = `
-      <h3>
-        <span class="badge" style="background:${cat.color}">
-          ${cat.name}
-        </span>
-      </h3>
+      <h3><span class="badge" style="background:${cat.color}">${cat.name}</span></h3>
 
       <div class="counter-row">
         <div>
           <label>Total disponible</label>
-          <input 
-            type="number" 
-            step="0.5" 
-            min="0"
-            value="${total}" 
-            data-counter="${cat.name}"
-          >
+          <input type="number" step="0.5" min="0" value="${total}" data-counter="${cat.name}">
         </div>
 
         <div>
           <label>Usado</label>
-          <input 
-            type="text" 
-            value="${used} ${cat.unit}" 
-            disabled
-          >
+          <input type="text" value="${used} ${cat.unit}" disabled>
         </div>
 
         <div>
           <label>Restante</label>
-          <input 
-            type="text" 
-            value="${remaining} ${cat.unit}" 
-            disabled
-          >
+          <input type="text" value="${remaining} ${cat.unit}" disabled>
         </div>
       </div>
-
-      <p style="font-size:13px; margin-bottom:0;">
-        Unidad de control: <strong>${cat.unit}</strong>
-      </p>
     `;
 
     list.appendChild(card);
   });
-
-  const info = document.createElement("div");
-  info.className = "counter-card";
-  info.innerHTML = `
-    <h3>Resumen</h3>
-    <p>Introduce en cada categoría los días u horas que tienes disponibles.</p>
-    <p>La aplicación descontará automáticamente lo utilizado según los días que marques en el calendario.</p>
-  `;
-  list.prepend(info);
 }
 
 function saveCounters() {
@@ -254,7 +222,7 @@ function saveCounters() {
 
   saveData();
   renderCounters();
-  alert("Contadores guardados correctamente.");
+  alert("Contadores guardados.");
 }
 
 function calculateUsed(categoryName) {
@@ -269,73 +237,88 @@ function calculateUsed(categoryName) {
   return total;
 }
 
-function getRemaining(categoryName) {
-  const total = Number(data.counters[categoryName]?.total || 0);
-  const used = calculateUsed(categoryName);
-  return total - used;
-}
-
-function renderHistory() {
+function renderPermits() {
   const list = document.getElementById("historyList");
-  list.innerHTML = "";
 
-  const entries = Object.entries(data.marks).sort((a, b) => a[0].localeCompare(b[0]));
+  const options = permitCategories
+    .map(cat => `<option value="${cat.name}">${cat.name}</option>`)
+    .join("");
 
-  if (entries.length === 0) {
-    list.innerHTML = "<p>No hay permisos registrados.</p>";
+  const permitsSorted = [...data.permits].sort((a, b) => a.date.localeCompare(b.date));
+
+  list.innerHTML = `
+    <div class="counter-card">
+      <h3>Nuevo permiso</h3>
+
+      <label>Fecha</label>
+      <input type="date" id="permitDate">
+
+      <label>Tipo de permiso</label>
+      <select id="permitType">
+        ${options}
+      </select>
+
+      <label>Observación</label>
+      <input type="text" id="permitNote" placeholder="Ej: médico, colegio, gestión personal...">
+
+      <button type="button" onclick="addPermit()">Añadir permiso</button>
+    </div>
+
+    <div class="counter-card">
+      <h3>Permisos registrados</h3>
+      <div id="permitRows"></div>
+    </div>
+  `;
+
+  const rows = document.getElementById("permitRows");
+
+  if (permitsSorted.length === 0) {
+    rows.innerHTML = "<p>No hay permisos registrados.</p>";
     return;
   }
 
-  entries.forEach(([date, item]) => {
-    const cat = categories.find(c => c.name === item.category);
-    const card = document.createElement("div");
-    card.className = "history-card";
-
-    card.innerHTML = `
-      <p><strong>${formatDate(date)}</strong></p>
-      <p>
-        <span class="badge" style="background:${cat?.color || "#333"}">
-          ${item.category}
-        </span>
-      </p>
-      <p>Cantidad consumida: <strong>${item.amount} ${cat?.unit || ""}</strong></p>
-      <button onclick="editAmount('${date}')">Editar días/horas</button>
-      <button class="danger" onclick="deleteMark('${date}')">Eliminar</button>
+  rows.innerHTML = permitsSorted.map((p, index) => {
+    const cat = categories.find(c => c.name === p.type);
+    return `
+      <div class="history-card">
+        <p><strong>${formatDate(p.date)}</strong></p>
+        <p><span class="badge" style="background:${cat?.color || "#333"}">${p.type}</span></p>
+        <p>${p.note || "Sin observaciones"}</p>
+        <button class="danger" type="button" onclick="deletePermit(${index})">Eliminar</button>
+      </div>
     `;
+  }).join("");
+}
 
-    list.appendChild(card);
+function addPermit() {
+  const date = document.getElementById("permitDate").value;
+  const type = document.getElementById("permitType").value;
+  const note = document.getElementById("permitNote").value.trim();
+
+  if (!date) {
+    alert("Selecciona una fecha.");
+    return;
+  }
+
+  data.permits.push({
+    date,
+    type,
+    note,
+    createdAt: new Date().toISOString()
   });
+
+  saveData();
+  renderPermits();
 }
 
-function editAmount(date) {
-  const item = data.marks[date];
-  const cat = categories.find(c => c.name === item.category);
-  const current = item.amount || 1;
+function deletePermit(index) {
+  const sorted = [...data.permits].sort((a, b) => a.date.localeCompare(b.date));
+  const itemToDelete = sorted[index];
 
-  const newAmount = prompt(`Introduce la nueva cantidad en ${cat?.unit || "unidades"}:`, current);
+  data.permits = data.permits.filter(p => p.createdAt !== itemToDelete.createdAt);
 
-  if (newAmount !== null && newAmount !== "") {
-    const value = Number(newAmount);
-
-    if (isNaN(value) || value <= 0) {
-      alert("Introduce un número válido.");
-      return;
-    }
-
-    data.marks[date].amount = value;
-    saveData();
-    renderHistory();
-    renderCalendar();
-  }
-}
-
-function deleteMark(date) {
-  if (confirm("¿Eliminar este permiso del historial y del calendario?")) {
-    delete data.marks[date];
-    saveData();
-    renderHistory();
-    renderCalendar();
-  }
+  saveData();
+  renderPermits();
 }
 
 function formatDate(date) {
@@ -357,7 +340,7 @@ function exportData() {
 }
 
 function clearAll() {
-  if (confirm("¿Seguro que quieres borrar todos los datos? Esta acción no se puede deshacer.")) {
+  if (confirm("¿Seguro que quieres borrar todos los datos?")) {
     localStorage.removeItem("calendarioLaboralData");
     location.reload();
   }
