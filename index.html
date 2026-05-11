@@ -5,10 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Calendario Laboral</title>
 
-  <!-- Diseño actualizado -->
-  <link rel="stylesheet" href="styles.css?v=7" />
+  <link rel="stylesheet" href="styles.css?v=8" />
 
-  <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0f172a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -22,7 +20,6 @@
     <p id="yearLabel"></p>
   </header>
 
-  <!-- Navegación -->
   <nav>
     <button type="button" onclick="showTab('calendario')">Calendario</button>
     <button type="button" onclick="showTab('contadores')">Contadores</button>
@@ -31,24 +28,21 @@
 
   <main>
 
-    <!-- CALENDARIO -->
     <section id="calendario" class="tab active">
       <div class="selector">
-        <label for="categorySelect">Categoría</label>
+        <label for="categorySelect">Categoría rápida</label>
         <select id="categorySelect"></select>
       </div>
 
       <div id="calendarGrid"></div>
     </section>
 
-    <!-- CONTADORES -->
     <section id="contadores" class="tab">
       <h2>Contadores de permisos</h2>
       <div id="counterList"></div>
       <button type="button" onclick="saveCounters()">Guardar contadores</button>
     </section>
 
-    <!-- PERMISOS -->
     <section id="permisos" class="tab">
       <h2>Gestión de permisos</h2>
       <div id="historyList"></div>
@@ -59,8 +53,31 @@
 
   </main>
 
-  <!-- JS -->
-  <script src="app.js?v=7"></script>
+  <!-- PANEL DÍA -->
+  <div id="dayModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalDate"></h2>
+        <button type="button" class="close-btn" onclick="closeDayModal()">✕</button>
+      </div>
+
+      <div id="modalHoliday"></div>
+
+      <label for="modalCategory">Añadir categoría</label>
+      <select id="modalCategory"></select>
+
+      <button type="button" onclick="addCategoryToSelectedDay()">Añadir al día</button>
+
+      <div id="modalDayInfo"></div>
+
+      <label for="dayObservation">Observación</label>
+      <input type="text" id="dayObservation" placeholder="Añadir nota del día...">
+
+      <button type="button" onclick="saveDayObservation()">Guardar observación</button>
+    </div>
+  </div>
+
+  <script src="app.js?v=8"></script>
 
 </body>
 </html>
