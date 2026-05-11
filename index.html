@@ -5,32 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Calendario Laboral</title>
 
-  <link rel="stylesheet" href="styles.css?v=11" />
+  <link rel="stylesheet" href="styles.css?v=12" />
 
   <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#111827" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Calendario Laboral" />
 </head>
 
 <body>
 
-  <header>
-    <h1>Calendario Laboral</h1>
-    <p id="yearLabel"></p>
+  <header class="app-header">
+    <div class="header-top">
+      <div>
+        <span class="eyebrow">Control anual</span>
+        <h1>Calendario Laboral</h1>
+        <p id="yearLabel"></p>
+      </div>
+      <div class="header-icon">✦</div>
+    </div>
   </header>
 
-  <nav>
-    <button type="button" onclick="showTab('calendario')">Calendario</button>
-    <button type="button" onclick="showTab('contadores')">Contadores</button>
-    <button type="button" onclick="showTab('permisos')">Permisos</button>
+  <nav class="bottom-nav">
+    <button type="button" onclick="showTab('calendario')">📅<span>Calendario</span></button>
+    <button type="button" onclick="showTab('contadores')">📊<span>Contadores</span></button>
+    <button type="button" onclick="showTab('permisos')">📝<span>Permisos</span></button>
   </nav>
 
   <main>
 
     <section id="calendario" class="tab active">
-      <div class="selector">
+      <div class="selector glass-card">
         <label for="categorySelect">Categoría rápida</label>
         <select id="categorySelect"></select>
       </div>
