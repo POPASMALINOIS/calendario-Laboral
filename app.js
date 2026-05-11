@@ -58,11 +58,9 @@ function updateHeader() {
   const yearLabel = document.getElementById("yearLabel");
   if (!yearLabel) return;
 
-  if (data.workerName) {
-    yearLabel.textContent = `${data.workerName} · ${selectedYear}`;
-  } else {
-    yearLabel.textContent = `Año ${selectedYear}`;
-  }
+  yearLabel.textContent = data.workerName
+    ? `${data.workerName} · ${selectedYear}`
+    : `Año ${selectedYear}`;
 }
 
 function fillCategorySelects() {
@@ -164,18 +162,13 @@ function showTab(id) {
 }
 
 function renderDashboard() {
-  const vacaciones = calculateRemaining("Vacaciones");
-  const asuntos = calculateRemaining("Asuntos Propios");
-  const horas =
-    calculateRemaining("Acompañamiento 1 grado") +
-    calculateRemaining("Acompañamiento hijos");
-
-  const permisos = data.permits.length;
-
-  setText("dashboardVacaciones", vacaciones);
-  setText("dashboardAsuntos", asuntos);
-  setText("dashboardHoras", horas);
-  setText("dashboardPermisos", permisos);
+  setText("dashboardVacaciones", calculateRemaining("Vacaciones"));
+  setText("dashboardAsuntos", calculateRemaining("Asuntos Propios"));
+  setText(
+    "dashboardHoras",
+    calculateRemaining("Acompañamiento 1 grado") + calculateRemaining("Acompañamiento hijos")
+  );
+  setText("dashboardPermisos", data.permits.length);
 
   const upcoming = document.getElementById("dashboardUpcoming");
   if (!upcoming) return;
@@ -222,11 +215,7 @@ function renderCalendar() {
   const holidays = getSpanishNationalHolidays(selectedYear);
 
   const box = document.createElement("div");
-  box.className = "month swipe-month";
-
-  const title = document.createElement("h3");
-  title.textContent = `${monthNames[selectedMonth]} ${selectedYear}`;
-  box.appendChild(title);
+  box.className = "month";
 
   const weekdays = document.createElement("div");
   weekdays.className = "weekdays";
@@ -271,7 +260,6 @@ function renderCalendar() {
 
     getDayMarks(dateKey).forEach(item => {
       const cat = categories.find(c => c.name === item.category);
-
       if (cat) {
         html += `<span class="cat-chip" style="background:${cat.color}">${cat.name}</span>`;
       }
@@ -288,36 +276,6 @@ function renderCalendar() {
 
   box.appendChild(days);
   grid.appendChild(box);
-
-  attachMonthSwipe(box);
-}
-
-function attachMonthSwipe(element) {
-  let startX = 0;
-  let startY = 0;
-  let endX = 0;
-  let endY = 0;
-
-  element.addEventListener("touchstart", e => {
-    startX = e.changedTouches[0].screenX;
-    startY = e.changedTouches[0].screenY;
-  }, { passive: true });
-
-  element.addEventListener("touchend", e => {
-    endX = e.changedTouches[0].screenX;
-    endY = e.changedTouches[0].screenY;
-
-    const diffX = endX - startX;
-    const diffY = endY - startY;
-
-    if (Math.abs(diffX) > 70 && Math.abs(diffX) > Math.abs(diffY)) {
-      if (diffX < 0) {
-        nextMonth();
-      } else {
-        previousMonth();
-      }
-    }
-  }, { passive: true });
 }
 
 function attachDayEvents(day, dateKey) {
@@ -368,10 +326,7 @@ function quickMarkDay(dateKey) {
 
   if (exists) {
     data.marks[dateKey] = data.marks[dateKey].filter(m => m.category !== selected);
-
-    if (data.marks[dateKey].length === 0) {
-      delete data.marks[dateKey];
-    }
+    if (data.marks[dateKey].length === 0) delete data.marks[dateKey];
   } else {
     data.marks[dateKey].push({
       category: selected,
