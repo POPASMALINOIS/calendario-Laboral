@@ -3,74 +3,89 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+:root {
+  --bg: #f6f7fb;
+  --card: rgba(255, 255, 255, 0.92);
+  --text: #101828;
+  --muted: #667085;
+  --line: rgba(16, 24, 40, 0.08);
+  --blue: #2f6bff;
+  --shadow: 0 12px 32px rgba(16, 24, 40, 0.10);
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
-  background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 35%, #f1f5f9 100%);
-  color: #111827;
+  background:
+    radial-gradient(circle at top left, rgba(47, 107, 255, 0.16), transparent 32%),
+    radial-gradient(circle at top right, rgba(124, 58, 237, 0.12), transparent 30%),
+    var(--bg);
+  color: var(--text);
   padding-bottom: 40px;
 }
 
 header {
-  background: linear-gradient(135deg, #111827, #1e3a8a);
+  padding: 46px 18px 34px;
+  background: linear-gradient(135deg, #111827, #1d4ed8 55%, #4338ca);
   color: white;
-  padding: 44px 18px 30px;
-  text-align: center;
-  border-bottom-left-radius: 28px;
-  border-bottom-right-radius: 28px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+  border-bottom-left-radius: 34px;
+  border-bottom-right-radius: 34px;
+  box-shadow: 0 18px 40px rgba(16, 24, 40, 0.22);
 }
 
 header h1 {
   margin: 0;
-  font-size: 30px;
-  font-weight: 900;
+  font-size: 31px;
+  font-weight: 950;
+  letter-spacing: -0.8px;
 }
 
 header p {
   margin: 8px 0 0;
+  font-size: 18px;
+  font-weight: 700;
   opacity: 0.85;
-  font-size: 20px;
 }
 
 nav {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 6px;
   position: sticky;
-  top: 0;
+  top: 10px;
   z-index: 999;
-  margin: -18px 12px 16px;
-  padding: 8px;
-  background: rgba(255,255,255,0.9);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(226,232,240,0.9);
-  border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+  margin: -18px 14px 18px;
+  padding: 6px;
+  background: rgba(255,255,255,0.86);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
 }
 
 nav button {
   width: 100%;
-  padding: 12px 4px;
+  padding: 13px 4px;
   border: none;
-  border-radius: 14px;
-  background: #e2e8f0;
-  color: #0f172a;
+  border-radius: 15px;
+  background: transparent;
+  color: #475467;
   font-weight: 900;
   font-size: 13px;
   margin: 0;
+  box-shadow: none;
 }
 
-nav button:active,
-nav button:focus {
-  background: #2563eb;
+nav button:focus,
+nav button:active {
+  background: var(--blue);
   color: white;
   outline: none;
 }
 
 main {
-  padding: 0 10px 16px;
+  padding: 0 12px 18px;
 }
 
 .tab {
@@ -81,15 +96,23 @@ main {
   display: block;
 }
 
+h2 {
+  font-size: 24px;
+  letter-spacing: -0.4px;
+  margin: 8px 4px 16px;
+}
+
 .selector,
 .counter-card,
 .history-card {
-  background: rgba(255,255,255,0.95);
-  border-radius: 22px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 26px;
   padding: 16px;
-  margin-bottom: 14px;
-  box-shadow: 0 8px 24px rgba(15,23,42,0.08);
-  border: 1px solid rgba(226,232,240,0.9);
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .selector label,
@@ -98,38 +121,49 @@ main {
 .modal-content label {
   display: block;
   font-weight: 900;
-  margin-bottom: 7px;
-  font-size: 14px;
-  color: #334155;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
 select,
 input {
   width: 100%;
-  padding: 13px 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 16px;
+  padding: 14px 14px;
+  border: 1px solid rgba(16, 24, 40, 0.10);
+  border-radius: 18px;
   font-size: 16px;
-  background: #f8fafc;
-  color: #111827;
-  margin-bottom: 10px;
+  background: #f9fafb;
+  color: var(--text);
+  margin-bottom: 12px;
+  outline: none;
+}
+
+select:focus,
+input:focus {
+  border-color: rgba(47, 107, 255, 0.55);
+  box-shadow: 0 0 0 4px rgba(47, 107, 255, 0.12);
+  background: white;
 }
 
 .month {
-  background: rgba(255,255,255,0.98);
-  border-radius: 26px;
-  margin-bottom: 22px;
-  padding: 14px;
-  box-shadow: 0 10px 28px rgba(15,23,42,0.10);
-  border: 1px solid rgba(226,232,240,0.9);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 30px;
+  margin-bottom: 24px;
+  padding: 15px;
+  box-shadow: var(--shadow);
   overflow: hidden;
 }
 
 .month h3 {
-  margin: 8px 0 16px;
-  text-align: center;
-  font-size: 27px;
-  font-weight: 900;
+  margin: 8px 0 18px;
+  text-align: left;
+  font-size: 29px;
+  font-weight: 950;
+  letter-spacing: -0.7px;
 }
 
 .days,
@@ -140,33 +174,41 @@ input {
 }
 
 .weekdays div {
-  font-size: 13px;
+  font-size: 12px;
   text-align: center;
-  font-weight: 900;
-  color: #64748b;
+  font-weight: 950;
+  color: #98a2b3;
+  padding-bottom: 4px;
 }
 
 .day {
-  height: 82px;
+  height: 86px;
   min-width: 0;
-  border-radius: 16px;
-  background: #eef2f7;
-  padding: 5px 3px;
+  border-radius: 18px;
+  background: #f2f4f7;
+  padding: 6px 4px;
   font-size: 15px;
   text-align: center;
   cursor: pointer;
-  border: 1px solid rgba(226,232,240,0.9);
+  border: 1px solid rgba(16, 24, 40, 0.06);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
   line-height: 1.05;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.day:active {
+  transform: scale(0.96);
+  box-shadow: inset 0 0 0 999px rgba(47, 107, 255, 0.08);
 }
 
 .day strong {
   font-size: 15px;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
+  font-weight: 950;
 }
 
 .empty {
@@ -176,45 +218,37 @@ input {
 }
 
 .day.holiday {
-  background: #fff7ed;
-  border: 2px solid #fb923c;
+  background: #fff4e8;
+  border: 1.5px solid #fb923c;
 }
 
-.holiday-chip {
-  display: block;
-  width: 100%;
-  background: #f97316;
-  color: white;
-  font-size: 7px;
-  font-weight: 900;
-  border-radius: 999px;
-  padding: 2px 3px;
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
+.holiday-chip,
 .cat-chip {
   display: block;
   width: 100%;
+  max-width: 100%;
   color: white;
   font-size: 7px;
-  font-weight: 900;
+  font-weight: 950;
   border-radius: 999px;
-  padding: 2px 3px;
+  padding: 3px 4px;
   margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.holiday-chip {
+  background: #f97316;
+  margin-bottom: 2px;
+}
+
 .note-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #0f172a;
-  margin-top: 3px;
+  background: #111827;
+  margin-top: 4px;
 }
 
 .counter-row {
@@ -225,35 +259,40 @@ input {
 
 button {
   width: 100%;
-  padding: 14px;
+  padding: 15px;
   border: none;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #2f6bff, #1d4ed8);
   color: white;
-  font-weight: 900;
+  font-weight: 950;
   font-size: 15px;
   margin-top: 10px;
-  box-shadow: 0 6px 16px rgba(37,99,235,0.28);
+  box-shadow: 0 10px 22px rgba(47, 107, 255, 0.28);
+}
+
+button:active {
+  transform: scale(0.98);
 }
 
 button.danger {
-  background: linear-gradient(135deg, #dc2626, #991b1b);
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  box-shadow: 0 10px 22px rgba(239, 68, 68, 0.22);
 }
 
 button.secondary {
-  background: #e2e8f0;
-  color: #0f172a;
+  background: #eef2ff;
+  color: #1d4ed8;
   box-shadow: none;
 }
 
 .badge {
   display: inline-block;
   max-width: 100%;
-  padding: 6px 10px;
+  padding: 7px 11px;
   border-radius: 999px;
   color: white;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 950;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -263,11 +302,13 @@ button.secondary {
   position: fixed;
   inset: 0;
   z-index: 2000;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(16, 24, 40, 0.56);
   display: flex;
   align-items: flex-end;
   justify-content: center;
   padding: 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .modal.hidden {
@@ -278,63 +319,66 @@ button.secondary {
   width: 100%;
   max-height: 88vh;
   overflow-y: auto;
-  background: #ffffff;
-  border-radius: 28px 28px 18px 18px;
-  padding: 18px;
-  box-shadow: 0 -12px 40px rgba(15,23,42,0.35);
+  background: rgba(255,255,255,0.98);
+  border: 1px solid rgba(255,255,255,0.7);
+  border-radius: 32px 32px 22px 22px;
+  padding: 20px;
+  box-shadow: 0 -18px 44px rgba(16,24,40,0.34);
 }
 
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
 }
 
 .modal-header h2 {
-  margin: 0 0 12px;
-  font-size: 22px;
-  font-weight: 900;
+  margin: 0 0 14px;
+  font-size: 23px;
+  font-weight: 950;
+  letter-spacing: -0.5px;
 }
 
 .close-btn {
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   padding: 0;
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   border-radius: 50%;
-  background: #e2e8f0;
-  color: #0f172a;
+  background: #f2f4f7;
+  color: #101828;
   box-shadow: none;
 }
 
 .day-detail-item {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 18px;
-  padding: 12px;
-  margin-top: 10px;
+  background: #f9fafb;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 14px;
+  margin-top: 12px;
 }
 
 .day-detail-item p {
-  margin: 0 0 8px;
+  margin: 0 0 9px;
 }
 
 .holiday-box {
-  background: #fff7ed;
+  background: #fff4e8;
   border: 1px solid #fb923c;
-  border-radius: 16px;
-  padding: 12px;
-  margin-bottom: 12px;
-  font-weight: 900;
+  border-radius: 18px;
+  padding: 13px;
+  margin-bottom: 14px;
+  font-weight: 950;
   color: #9a3412;
 }
 
 .observation-box {
   background: #eff6ff;
   border: 1px solid #bfdbfe;
-  border-radius: 16px;
-  padding: 12px;
-  margin: 12px 0;
+  border-radius: 18px;
+  padding: 13px;
+  margin: 14px 0;
   color: #1e3a8a;
+  font-weight: 700;
 }
