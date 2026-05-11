@@ -1,5 +1,6 @@
 const currentYear = new Date().getFullYear();
 let selectedYear = Number(localStorage.getItem("selectedCalendarYear")) || currentYear;
+let selectedDayKey = null;
 
 const categories = [
   { name: "Turno Mañana", color: "#2563eb", unit: "días" },
@@ -18,10 +19,12 @@ const permitCategories = categories.filter(c => c.name !== "Turno Mañana");
 let data = JSON.parse(localStorage.getItem("calendarioLaboralData")) || {
   marks: {},
   counters: {},
-  permits: []
+  permits: [],
+  observations: {}
 };
 
 if (!data.permits) data.permits = [];
+if (!data.observations) data.observations = {};
 
 function saveData() {
   localStorage.setItem("calendarioLaboralData", JSON.stringify(data));
@@ -38,13 +41,21 @@ function init() {
   document.getElementById("yearLabel").textContent = "Año " + selectedYear;
 
   const select = document.getElementById("categorySelect");
+  const modalSelect = document.getElementById("modalCategory");
+
   select.innerHTML = "";
+  modalSelect.innerHTML = "";
 
   categories.forEach(cat => {
-    const option = document.createElement("option");
-    option.value = cat.name;
-    option.textContent = cat.name;
-    select.appendChild(option);
+    const option1 = document.createElement("option");
+    option1.value = cat.name;
+    option1.textContent = cat.name;
+    select.appendChild(option1);
+
+    const option2 = document.createElement("option");
+    option2.value = cat.name;
+    option2.textContent = cat.name;
+    modalSelect.appendChild(option2);
   });
 
   createYearSelector();
@@ -149,11 +160,7 @@ function renderCalendar() {
         html += `<span class="holiday-chip">Festivo</span>`;
       }
 
-      const marks = Array.isArray(data.marks[dateKey])
-        ? data.marks[dateKey]
-        : data.marks[dateKey]
-          ? [data.marks[dateKey]]
-          : [];
+      const marks = getDayMarks(dateKey);
 
       marks.forEach(item => {
         const cat = categories.find(c => c.name === item.category);
@@ -162,8 +169,12 @@ function renderCalendar() {
         }
       });
 
+      if (data.observations[dateKey]) {
+        html += `<span class="note-dot"></span>`;
+      }
+
       day.innerHTML = html;
-      day.onclick = () => markDay(dateKey);
+      day.onclick = () => openDayModal(dateKey);
 
       days.appendChild(day);
     }
@@ -173,46 +184,161 @@ function renderCalendar() {
   }
 }
 
-function markDay(dateKey) {
-  const selected = document.getElementById("categorySelect").value;
-  const cat = categories.find(c => c.name === selected);
+function getDayMarks(dateKey) {
+  if (!data.marks[dateKey]) return [];
+  return Array.isArray(data.marks[dateKey]) ? data.marks[dateKey] : [data.marks[dateKey]];
+}
 
-  if (!Array.isArray(data.marks[dateKey])) {
-    data.marks[dateKey] = data.marks[dateKey] ? [data.marks[dateKey]] : [];
+function openDayModal(dateKey) {
+  selectedDayKey = dateKey;
+
+  document.getElementById("modalDate").textContent = formatDateLong(dateKey);
+  document.getElementById("dayObservation").value = data.observations[dateKey] || "";
+
+  const holidays = getSpanishNationalHolidays(Number(dateKey.split("-")[0]));
+  const holidayBox = document.getElementById("modalHoliday");
+
+  if (holidays[dateKey]) {
+    holidayBox.innerHTML = `<div class="holiday-box">Festivo nacional: ${holidays[dateKey]}</div>`;
+  } else {
+    holidayBox.innerHTML = "";
   }
 
-  const alreadyExists = data.marks[dateKey].some(m => m.category === selected);
+  renderModalDayInfo();
+  document.getElementById("dayModal").classList.remove("hidden");
+}
+
+function closeDayModal() {
+  selectedDayKey = null;
+  document.getElementById("dayModal").classList.add("hidden");
+}
+
+function renderModalDayInfo() {
+  const box = document.getElementById("modalDayInfo");
+  const marks = getDayMarks(selectedDayKey);
+
+  if (marks.length === 0) {
+    box.innerHTML = `<div class="observation-box">Este día no tiene categorías marcadas.</div>`;
+    return;
+  }
+
+  box.innerHTML = marks.map((item, index) => {
+    const cat = categories.find(c => c.name === item.category);
+
+    return `
+      <div class="day-detail-item">
+        <p>
+          <span class="badge" style="background:${cat?.color || "#333"}">
+            ${item.category}
+          </span>
+        </p>
+        <p>Cantidad: <strong>${item.amount || 1} ${cat?.unit || ""}</strong></p>
+        <button type="button" class="secondary" onclick="editDayCategoryAmount(${index})">Editar cantidad</button>
+        <button type="button" class="danger" onclick="removeCategoryFromSelectedDay(${index})">Quitar categoría</button>
+      </div>
+    `;
+  }).join("");
+}
+
+function addCategoryToSelectedDay() {
+  if (!selectedDayKey) return;
+
+  const selected = document.getElementById("modalCategory").value;
+  const cat = categories.find(c => c.name === selected);
+
+  if (!Array.isArray(data.marks[selectedDayKey])) {
+    data.marks[selectedDayKey] = data.marks[selectedDayKey] ? [data.marks[selectedDayKey]] : [];
+  }
+
+  const alreadyExists = data.marks[selectedDayKey].some(m => m.category === selected);
 
   if (alreadyExists) {
-    const remove = confirm("Esta categoría ya está marcada en este día. ¿Quieres quitarla?");
-    if (remove) {
-      data.marks[dateKey] = data.marks[dateKey].filter(m => m.category !== selected);
-      if (data.marks[dateKey].length === 0) delete data.marks[dateKey];
+    alert("Esta categoría ya está marcada en este día.");
+    return;
+  }
+
+  let amount = 1;
+
+  if (cat.unit === "horas") {
+    const input = prompt(`¿Cuántas horas quieres descontar de "${selected}"?`, "1");
+    if (input === null || input === "") return;
+
+    amount = Number(input);
+
+    if (isNaN(amount) || amount <= 0) {
+      alert("Introduce un número válido.");
+      return;
     }
+  }
+
+  data.marks[selectedDayKey].push({
+    category: selected,
+    amount,
+    createdAt: new Date().toISOString()
+  });
+
+  saveData();
+  renderModalDayInfo();
+  renderCalendar();
+}
+
+function removeCategoryFromSelectedDay(index) {
+  if (!selectedDayKey) return;
+
+  if (!confirm("¿Quitar esta categoría del día?")) return;
+
+  const marks = getDayMarks(selectedDayKey);
+  marks.splice(index, 1);
+
+  if (marks.length === 0) {
+    delete data.marks[selectedDayKey];
   } else {
-    let amount = 1;
+    data.marks[selectedDayKey] = marks;
+  }
 
-    if (cat.unit === "horas") {
-      const input = prompt(`¿Cuántas horas quieres descontar de "${selected}"?`, "1");
-      if (input === null || input === "") return;
+  saveData();
+  renderModalDayInfo();
+  renderCalendar();
+}
 
-      amount = Number(input);
+function editDayCategoryAmount(index) {
+  const marks = getDayMarks(selectedDayKey);
+  const item = marks[index];
+  const cat = categories.find(c => c.name === item.category);
 
-      if (isNaN(amount) || amount <= 0) {
-        alert("Introduce un número válido.");
-        return;
-      }
-    }
+  const newAmount = prompt(`Introduce cantidad en ${cat?.unit || "unidades"}:`, item.amount || 1);
 
-    data.marks[dateKey].push({
-      category: selected,
-      amount,
-      createdAt: new Date().toISOString()
-    });
+  if (newAmount === null || newAmount === "") return;
+
+  const value = Number(newAmount);
+
+  if (isNaN(value) || value <= 0) {
+    alert("Introduce un número válido.");
+    return;
+  }
+
+  marks[index].amount = value;
+  data.marks[selectedDayKey] = marks;
+
+  saveData();
+  renderModalDayInfo();
+  renderCalendar();
+}
+
+function saveDayObservation() {
+  if (!selectedDayKey) return;
+
+  const note = document.getElementById("dayObservation").value.trim();
+
+  if (note) {
+    data.observations[selectedDayKey] = note;
+  } else {
+    delete data.observations[selectedDayKey];
   }
 
   saveData();
   renderCalendar();
+  alert("Observación guardada.");
 }
 
 function renderCounters() {
@@ -270,8 +396,11 @@ function calculateUsed(categoryName) {
 
   Object.values(data.marks).forEach(dayMarks => {
     const marks = Array.isArray(dayMarks) ? dayMarks : [dayMarks];
+
     marks.forEach(item => {
-      if (item.category === categoryName) total += Number(item.amount || 1);
+      if (item.category === categoryName) {
+        total += Number(item.amount || 1);
+      }
     });
   });
 
@@ -318,6 +447,7 @@ function renderPermits() {
 
   rows.innerHTML = permitsSorted.map((p, index) => {
     const cat = categories.find(c => c.name === p.type);
+
     return `
       <div class="history-card">
         <p><strong>${formatDate(p.date)}</strong></p>
@@ -396,12 +526,25 @@ function getEasterDate(year) {
   const L = I - J;
   const month = 3 + f((L + 40) / 44);
   const day = L + 28 - 31 * f(month / 4);
+
   return new Date(year, month - 1, day);
 }
 
 function formatDate(date) {
   const [y, m, d] = date.split("-");
   return `${d}/${m}/${y}`;
+}
+
+function formatDateLong(date) {
+  const [y, m, d] = date.split("-");
+  const parsed = new Date(Number(y), Number(m) - 1, Number(d));
+
+  return parsed.toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
 }
 
 function exportData() {
