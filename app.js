@@ -2,6 +2,8 @@ const currentYear = new Date().getFullYear();
 
 let selectedYear = Number(localStorage.getItem("selectedCalendarYear")) || currentYear;
 let selectedMonth = new Date().getMonth();
+let selectedWeekDate = new Date();
+let calendarView = localStorage.getItem("calendarView") || "month";
 let selectedDayKey = null;
 
 const categories = [
@@ -23,6 +25,7 @@ let data = JSON.parse(localStorage.getItem("calendarioLaboralData")) || {
   counters: {},
   permits: [],
   observations: {},
+  extraHours: [],
   workerName: ""
 };
 
@@ -30,6 +33,7 @@ if (!data.marks) data.marks = {};
 if (!data.counters) data.counters = {};
 if (!data.permits) data.permits = [];
 if (!data.observations) data.observations = {};
+if (!data.extraHours) data.extraHours = [];
 if (!data.workerName) data.workerName = "";
 
 function saveData() {
@@ -49,6 +53,7 @@ function init() {
   fillCategorySelects();
   createYearSelector();
   updateHeader();
+  updateCalendarModeButtons();
   renderDashboard();
   renderCalendar();
   loadWorkerName();
@@ -69,7 +74,6 @@ function fillCategorySelects() {
 
   [select, modalSelect].forEach(target => {
     if (!target) return;
-
     target.innerHTML = "";
 
     categories.forEach(cat => {
@@ -86,7 +90,7 @@ function createYearSelector() {
   if (!selector || document.getElementById("yearSelect")) return;
 
   const wrapper = document.createElement("div");
-  wrapper.style.marginTop = "8px";
+  wrapper.className = "year-selector";
 
   let options = "";
 
@@ -116,12 +120,41 @@ function changeYear() {
   renderCalendar();
 }
 
-function previousMonth() {
-  selectedMonth--;
+function setCalendarView(view) {
+  calendarView = view;
+  localStorage.setItem("calendarView", view);
+  updateCalendarModeButtons();
+  renderCalendar();
+}
 
-  if (selectedMonth < 0) {
-    selectedMonth = 11;
+function updateCalendarModeButtons() {
+  ["Year", "Month", "Week"].forEach(name => {
+    const btn = document.getElementById("btn" + name);
+    if (btn) btn.classList.remove("active-mode");
+  });
+
+  const active =
+    calendarView === "year" ? "btnYear" :
+    calendarView === "week" ? "btnWeek" :
+    "btnMonth";
+
+  const btn = document.getElementById(active);
+  if (btn) btn.classList.add("active-mode");
+}
+
+function previousPeriod() {
+  if (calendarView === "year") {
     selectedYear--;
+  } else if (calendarView === "month") {
+    selectedMonth--;
+    if (selectedMonth < 0) {
+      selectedMonth = 11;
+      selectedYear--;
+    }
+  } else {
+    selectedWeekDate.setDate(selectedWeekDate.getDate() - 7);
+    selectedYear = selectedWeekDate.getFullYear();
+    selectedMonth = selectedWeekDate.getMonth();
   }
 
   syncYearSelect();
@@ -129,12 +162,19 @@ function previousMonth() {
   renderCalendar();
 }
 
-function nextMonth() {
-  selectedMonth++;
-
-  if (selectedMonth > 11) {
-    selectedMonth = 0;
+function nextPeriod() {
+  if (calendarView === "year") {
     selectedYear++;
+  } else if (calendarView === "month") {
+    selectedMonth++;
+    if (selectedMonth > 11) {
+      selectedMonth = 0;
+      selectedYear++;
+    }
+  } else {
+    selectedWeekDate.setDate(selectedWeekDate.getDate() + 7);
+    selectedYear = selectedWeekDate.getFullYear();
+    selectedMonth = selectedWeekDate.getMonth();
   }
 
   syncYearSelect();
@@ -158,17 +198,17 @@ function showTab(id) {
   if (id === "calendario") renderCalendar();
   if (id === "contadores") renderCounters();
   if (id === "permisos") renderPermits();
+  if (id === "horas") renderExtraHours();
   if (id === "ajustes") loadWorkerName();
 }
 
 function renderDashboard() {
   setText("dashboardVacaciones", calculateRemaining("Vacaciones"));
   setText("dashboardAsuntos", calculateRemaining("Asuntos Propios"));
-  setText(
-    "dashboardHoras",
-    calculateRemaining("Acompañamiento 1 grado") + calculateRemaining("Acompañamiento hijos")
-  );
-  setText("dashboardPermisos", data.permits.length);
+  setText("dashboardAcomp1", calculateRemaining("Acompañamiento 1 grado"));
+  setText("dashboardAcompHijos", calculateRemaining("Acompañamiento hijos"));
+  setText("dashboardBlancoMovil", calculateRemaining("Día Blanco Móvil"));
+  setText("dashboardHorasExtra", getTotalExtraHours());
 
   const upcoming = document.getElementById("dashboardUpcoming");
   if (!upcoming) return;
@@ -200,19 +240,36 @@ function renderDashboard() {
 }
 
 function renderCalendar() {
+  if (calendarView === "year") renderYearCalendar();
+  if (calendarView === "month") renderMonthCalendar();
+  if (calendarView === "week") renderWeekCalendar();
+}
+
+function renderYearCalendar() {
+  const grid = document.getElementById("calendarGrid");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+  setText("currentMonthLabel", selectedYear);
+
+  const wrap = document.createElement("div");
+  wrap.className = "year-grid";
+
+  for (let month = 0; month < 12; month++) {
+    wrap.appendChild(buildMiniMonth(selectedYear, month));
+  }
+
+  grid.appendChild(wrap);
+}
+
+function renderMonthCalendar() {
   const grid = document.getElementById("calendarGrid");
   if (!grid) return;
 
   grid.innerHTML = "";
 
-  const monthNames = [
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-  ];
-
+  const monthNames = getMonthNames();
   setText("currentMonthLabel", `${monthNames[selectedMonth]} ${selectedYear}`);
-
-  const holidays = getSpanishNationalHolidays(selectedYear);
 
   const box = document.createElement("div");
   box.className = "month";
@@ -244,38 +301,146 @@ function renderCalendar() {
   const totalDays = new Date(selectedYear, selectedMonth + 1, 0).getDate();
 
   for (let d = 1; d <= totalDays; d++) {
-    const dateKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    const day = document.createElement("div");
-    day.className = "day";
-
-    if (holidays[dateKey]) {
-      day.classList.add("holiday");
-    }
-
-    let html = `<strong>${d}</strong>`;
-
-    if (holidays[dateKey]) {
-      html += `<span class="holiday-chip">Festivo</span>`;
-    }
-
-    getDayMarks(dateKey).forEach(item => {
-      const cat = categories.find(c => c.name === item.category);
-      if (cat) {
-        html += `<span class="cat-chip" style="background:${cat.color}">${cat.name}</span>`;
-      }
-    });
-
-    if (data.observations[dateKey]) {
-      html += `<span class="note-dot"></span>`;
-    }
-
-    day.innerHTML = html;
-    attachDayEvents(day, dateKey);
-    days.appendChild(day);
+    days.appendChild(buildDayCell(selectedYear, selectedMonth, d, "day"));
   }
 
   box.appendChild(days);
   grid.appendChild(box);
+}
+
+function renderWeekCalendar() {
+  const grid = document.getElementById("calendarGrid");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  const start = getMonday(selectedWeekDate);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  setText("currentMonthLabel", `${formatDate(dateKeyFromDate(start))} - ${formatDate(dateKeyFromDate(end))}`);
+
+  const weekBox = document.createElement("div");
+  weekBox.className = "week-view";
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+
+    const dateKey = dateKeyFromDate(d);
+    const dayCard = document.createElement("div");
+    dayCard.className = "week-day-card";
+
+    const dayName = d.toLocaleDateString("es-ES", { weekday: "long" });
+    const marks = getDayMarks(dateKey);
+    const extras = getExtraHoursForDate(dateKey);
+
+    dayCard.innerHTML = `
+      <div class="week-day-title">
+        <strong>${capitalize(dayName)}</strong>
+        <span>${formatDate(dateKey)}</span>
+      </div>
+      <div class="week-day-content">
+        ${marks.length === 0 && extras.length === 0 ? "<p>Sin registros</p>" : ""}
+      </div>
+    `;
+
+    const content = dayCard.querySelector(".week-day-content");
+
+    marks.forEach(item => {
+      const cat = categories.find(c => c.name === item.category);
+      content.innerHTML += `<span class="badge week-badge" style="background:${cat?.color || "#333"}">${item.category}</span>`;
+    });
+
+    extras.forEach(e => {
+      content.innerHTML += `<span class="badge week-badge extra-badge">⏱️ ${e.hours} h extra</span>`;
+    });
+
+    attachDayEvents(dayCard, dateKey);
+    weekBox.appendChild(dayCard);
+  }
+
+  grid.appendChild(weekBox);
+}
+
+function buildMiniMonth(year, month) {
+  const monthNames = getMonthNames();
+  const box = document.createElement("div");
+  box.className = "mini-month";
+
+  const title = document.createElement("h3");
+  title.textContent = monthNames[month];
+  box.appendChild(title);
+
+  const weekdays = document.createElement("div");
+  weekdays.className = "mini-weekdays";
+  ["L","M","X","J","V","S","D"].forEach(d => {
+    const el = document.createElement("div");
+    el.textContent = d;
+    weekdays.appendChild(el);
+  });
+  box.appendChild(weekdays);
+
+  const days = document.createElement("div");
+  days.className = "mini-days";
+
+  const firstDay = new Date(year, month, 1);
+  let start = firstDay.getDay();
+  start = start === 0 ? 6 : start - 1;
+
+  for (let i = 0; i < start; i++) {
+    const empty = document.createElement("div");
+    empty.className = "mini-day empty";
+    days.appendChild(empty);
+  }
+
+  const totalDays = new Date(year, month + 1, 0).getDate();
+
+  for (let d = 1; d <= totalDays; d++) {
+    days.appendChild(buildDayCell(year, month, d, "mini-day"));
+  }
+
+  box.appendChild(days);
+  return box;
+}
+
+function buildDayCell(year, month, d, className) {
+  const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  const holidays = getSpanishNationalHolidays(year);
+  const day = document.createElement("div");
+  day.className = className;
+
+  if (holidays[dateKey]) day.classList.add("holiday");
+
+  let html = `<strong>${d}</strong>`;
+
+  if (holidays[dateKey] && className === "day") {
+    html += `<span class="holiday-chip">Festivo</span>`;
+  }
+
+  getDayMarks(dateKey).forEach(item => {
+    const cat = categories.find(c => c.name === item.category);
+    if (cat) {
+      html += className === "mini-day"
+        ? `<span class="mini-dot" style="background:${cat.color}"></span>`
+        : `<span class="cat-chip" style="background:${cat.color}">${cat.name}</span>`;
+    }
+  });
+
+  const extras = getExtraHoursForDate(dateKey);
+  if (extras.length > 0) {
+    html += className === "mini-day"
+      ? `<span class="mini-dot extra-dot"></span>`
+      : `<span class="cat-chip extra-chip">⏱️ Horas extra</span>`;
+  }
+
+  if (data.observations[dateKey]) {
+    html += `<span class="note-dot"></span>`;
+  }
+
+  day.innerHTML = html;
+  attachDayEvents(day, dateKey);
+  return day;
 }
 
 function attachDayEvents(day, dateKey) {
@@ -306,11 +471,9 @@ function attachDayEvents(day, dateKey) {
   day.addEventListener("touchstart", startPress, { passive: true });
   day.addEventListener("touchend", endPress, { passive: true });
   day.addEventListener("touchcancel", cancelPress, { passive: true });
-
   day.addEventListener("mousedown", startPress);
   day.addEventListener("mouseup", endPress);
   day.addEventListener("mouseleave", cancelPress);
-
   day.addEventListener("contextmenu", e => e.preventDefault());
 }
 
@@ -367,7 +530,6 @@ function openDayModal(dateKey) {
 
 function closeDayModal() {
   selectedDayKey = null;
-
   const modal = document.getElementById("dayModal");
   if (modal) modal.classList.add("hidden");
 }
@@ -377,16 +539,18 @@ function renderModalDayInfo() {
   if (!box || !selectedDayKey) return;
 
   const marks = getDayMarks(selectedDayKey);
+  const extras = getExtraHoursForDate(selectedDayKey);
 
-  if (marks.length === 0) {
-    box.innerHTML = `<div class="observation-box">Este día no tiene categorías marcadas.</div>`;
-    return;
+  let html = "";
+
+  if (marks.length === 0 && extras.length === 0) {
+    html += `<div class="observation-box">Este día no tiene categorías marcadas.</div>`;
   }
 
-  box.innerHTML = marks.map((item, index) => {
+  marks.forEach((item, index) => {
     const cat = categories.find(c => c.name === item.category);
 
-    return `
+    html += `
       <div class="day-detail-item">
         <p>
           <span class="badge" style="background:${cat?.color || "#333"}">
@@ -398,7 +562,19 @@ function renderModalDayInfo() {
         <button type="button" class="danger" onclick="removeCategoryFromSelectedDay(${index})">Quitar categoría</button>
       </div>
     `;
-  }).join("");
+  });
+
+  extras.forEach(e => {
+    html += `
+      <div class="day-detail-item">
+        <p><span class="badge extra-badge">⏱️ Horas extra</span></p>
+        <p><strong>${e.hours} horas</strong></p>
+        <p>${e.note || ""}</p>
+      </div>
+    `;
+  });
+
+  box.innerHTML = html;
 }
 
 function addCategoryToSelectedDay() {
@@ -425,9 +601,7 @@ function addCategoryToSelectedDay() {
   if (cat && cat.unit === "horas") {
     const input = prompt(`¿Cuántas horas quieres descontar de "${selected}"?`, "1");
     if (input === null || input === "") return;
-
     amount = Number(input);
-
     if (isNaN(amount) || amount <= 0) {
       alert("Introduce un número válido.");
       return;
@@ -448,7 +622,6 @@ function addCategoryToSelectedDay() {
 
 function removeCategoryFromSelectedDay(index) {
   if (!selectedDayKey) return;
-
   if (!confirm("¿Quitar esta categoría del día?")) return;
 
   const marks = getDayMarks(selectedDayKey);
@@ -510,32 +683,6 @@ function saveDayObservation() {
   alert("Observación guardada.");
 }
 
-function getDayMarks(dateKey) {
-  if (!data.marks[dateKey]) return [];
-  return Array.isArray(data.marks[dateKey]) ? data.marks[dateKey] : [data.marks[dateKey]];
-}
-
-function calculateUsed(categoryName) {
-  let total = 0;
-
-  Object.values(data.marks).forEach(dayMarks => {
-    const marks = Array.isArray(dayMarks) ? dayMarks : [dayMarks];
-
-    marks.forEach(item => {
-      if (item.category === categoryName) {
-        total += Number(item.amount || 1);
-      }
-    });
-  });
-
-  return total;
-}
-
-function calculateRemaining(categoryName) {
-  const total = Number(data.counters[categoryName]?.total || 0);
-  return total - calculateUsed(categoryName);
-}
-
 function renderCounters() {
   const list = document.getElementById("counterList");
   if (!list) return;
@@ -548,19 +695,19 @@ function renderCounters() {
     const remaining = total - used;
 
     const card = document.createElement("div");
-    card.className = "counter-card";
+    card.className = "counter-card compact-counter";
 
     card.innerHTML = `
-      <h3><span class="badge" style="background:${cat.color}">${cat.name}</span></h3>
+      <div class="counter-head">
+        <span class="badge" style="background:${cat.color}">${cat.name}</span>
+        <strong>${remaining} ${cat.unit}</strong>
+      </div>
 
-      <label>Total disponible</label>
-      <input type="number" step="0.5" min="0" value="${total}" data-counter="${cat.name}">
-
-      <label>Usado</label>
-      <input type="text" value="${used} ${cat.unit}" disabled>
-
-      <label>Restante</label>
-      <input type="text" value="${remaining} ${cat.unit}" disabled>
+      <div class="counter-mini-grid">
+        <label>Total</label>
+        <input type="number" step="0.5" min="0" value="${total}" data-counter="${cat.name}">
+        <span>Usado: ${used} ${cat.unit}</span>
+      </div>
     `;
 
     list.appendChild(card);
@@ -661,6 +808,100 @@ function deletePermit(index) {
   renderPermits();
 }
 
+function addExtraHours() {
+  const date = document.getElementById("extraDate")?.value;
+  const hours = Number(document.getElementById("extraHours")?.value || 0);
+  const note = document.getElementById("extraNote")?.value || "";
+
+  if (!date || hours <= 0) {
+    alert("Introduce fecha y horas válidas.");
+    return;
+  }
+
+  data.extraHours.push({
+    date,
+    hours,
+    note,
+    createdAt: new Date().toISOString()
+  });
+
+  saveData();
+  document.getElementById("extraDate").value = "";
+  document.getElementById("extraHours").value = "";
+  document.getElementById("extraNote").value = "";
+
+  renderDashboard();
+  renderExtraHours();
+  renderCalendar();
+}
+
+function renderExtraHours() {
+  const list = document.getElementById("extraHoursList");
+  if (!list) return;
+
+  const sorted = [...data.extraHours].sort((a, b) => a.date.localeCompare(b.date));
+
+  if (sorted.length === 0) {
+    list.innerHTML = `<div class="glass-card"><p>No hay horas extra registradas.</p></div>`;
+    return;
+  }
+
+  list.innerHTML = sorted.map((e, index) => `
+    <div class="history-card">
+      <p><strong>${formatDate(e.date)}</strong></p>
+      <p>⏱️ ${e.hours} horas</p>
+      <p>${e.note || ""}</p>
+      <button class="danger" onclick="deleteExtraHours(${index})">Eliminar</button>
+    </div>
+  `).join("");
+}
+
+function deleteExtraHours(index) {
+  const sorted = [...data.extraHours].sort((a, b) => a.date.localeCompare(b.date));
+  const item = sorted[index];
+
+  data.extraHours = data.extraHours.filter(e => e.createdAt !== item.createdAt);
+
+  saveData();
+  renderDashboard();
+  renderExtraHours();
+  renderCalendar();
+}
+
+function getExtraHoursForDate(dateKey) {
+  return data.extraHours.filter(e => e.date === dateKey);
+}
+
+function getTotalExtraHours() {
+  return data.extraHours.reduce((sum, e) => sum + Number(e.hours || 0), 0);
+}
+
+function getDayMarks(dateKey) {
+  if (!data.marks[dateKey]) return [];
+  return Array.isArray(data.marks[dateKey]) ? data.marks[dateKey] : [data.marks[dateKey]];
+}
+
+function calculateUsed(categoryName) {
+  let total = 0;
+
+  Object.values(data.marks).forEach(dayMarks => {
+    const marks = Array.isArray(dayMarks) ? dayMarks : [dayMarks];
+
+    marks.forEach(item => {
+      if (item.category === categoryName) {
+        total += Number(item.amount || 1);
+      }
+    });
+  });
+
+  return total;
+}
+
+function calculateRemaining(categoryName) {
+  const total = Number(data.counters[categoryName]?.total || 0);
+  return total - calculateUsed(categoryName);
+}
+
 function saveWorkerName() {
   const input = document.getElementById("workerName");
   if (!input) return;
@@ -674,9 +915,7 @@ function saveWorkerName() {
 
 function loadWorkerName() {
   const input = document.getElementById("workerName");
-  if (input) {
-    input.value = data.workerName || "";
-  }
+  if (input) input.value = data.workerName || "";
 }
 
 function setText(id, value) {
@@ -699,6 +938,26 @@ function formatDateLong(date) {
     month: "long",
     year: "numeric"
   });
+}
+
+function dateKeyFromDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+}
+
+function getMonday(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function getMonthNames() {
+  return ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+}
+
+function capitalize(text) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 function getSpanishNationalHolidays(year) {
@@ -755,7 +1014,6 @@ function exportData() {
 
 function clearAll() {
   if (!confirm("¿Seguro que deseas borrar todos los datos?")) return;
-
   localStorage.removeItem("calendarioLaboralData");
   location.reload();
 }
