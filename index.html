@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Calendario Laboral Pro</title>
 
-  <link rel="stylesheet" href="styles.css?v=15" />
+  <link rel="stylesheet" href="styles.css?v=16" />
 
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#111827" />
@@ -46,15 +46,27 @@
         </div>
 
         <div class="dashboard-card">
-          <span>Acompañamiento</span>
-          <strong id="dashboardHoras">0</strong>
+          <span>Acomp. 1º grado</span>
+          <strong id="dashboardAcomp1">0</strong>
           <small>Horas restantes</small>
         </div>
 
         <div class="dashboard-card">
-          <span>Permisos</span>
-          <strong id="dashboardPermisos">0</strong>
-          <small>Registrados</small>
+          <span>Acomp. hijos</span>
+          <strong id="dashboardAcompHijos">0</strong>
+          <small>Horas restantes</small>
+        </div>
+
+        <div class="dashboard-card">
+          <span>Día blanco móvil</span>
+          <strong id="dashboardBlancoMovil">0</strong>
+          <small>Días restantes</small>
+        </div>
+
+        <div class="dashboard-card">
+          <span>Horas extra</span>
+          <strong id="dashboardHorasExtra">0</strong>
+          <small>Horas registradas</small>
         </div>
       </div>
 
@@ -66,13 +78,19 @@
 
     <section id="calendario" class="tab">
       <div class="selector glass-card">
+        <div class="calendar-mode">
+          <button type="button" id="btnYear" onclick="setCalendarView('year')">Año</button>
+          <button type="button" id="btnMonth" onclick="setCalendarView('month')">Mes</button>
+          <button type="button" id="btnWeek" onclick="setCalendarView('week')">Semana</button>
+        </div>
+
         <label for="categorySelect">Categoría rápida</label>
         <select id="categorySelect"></select>
 
         <div class="month-navigation">
-          <button type="button" onclick="previousMonth()">‹</button>
+          <button type="button" onclick="previousPeriod()">‹</button>
           <span id="currentMonthLabel"></span>
-          <button type="button" onclick="nextMonth()">›</button>
+          <button type="button" onclick="nextPeriod()">›</button>
         </div>
       </div>
 
@@ -80,17 +98,36 @@
     </section>
 
     <section id="contadores" class="tab">
-      <h2>Contadores de permisos</h2>
+      <h2>Contadores</h2>
       <div id="counterList"></div>
       <button type="button" onclick="saveCounters()">Guardar contadores</button>
     </section>
 
     <section id="permisos" class="tab">
-      <h2>Gestión de permisos</h2>
+      <h2>Permisos</h2>
       <div id="historyList"></div>
 
       <button type="button" onclick="exportData()">Exportar datos</button>
       <button type="button" class="danger" onclick="clearAll()">Borrar todo</button>
+    </section>
+
+    <section id="horas" class="tab">
+      <h2>Horas extra</h2>
+
+      <div class="glass-card">
+        <label for="extraDate">Fecha</label>
+        <input type="date" id="extraDate" />
+
+        <label for="extraHours">Horas extra</label>
+        <input type="number" step="0.25" min="0" id="extraHours" placeholder="Ej: 2" />
+
+        <label for="extraNote">Observación</label>
+        <input type="text" id="extraNote" placeholder="Ej: cierre, inventario, refuerzo..." />
+
+        <button type="button" onclick="addExtraHours()">Añadir horas extra</button>
+      </div>
+
+      <div id="extraHoursList"></div>
     </section>
 
     <section id="ajustes" class="tab">
@@ -140,10 +177,11 @@
     <button type="button" onclick="showTab('calendario')">📅<span>Calendario</span></button>
     <button type="button" onclick="showTab('contadores')">📊<span>Contadores</span></button>
     <button type="button" onclick="showTab('permisos')">📝<span>Permisos</span></button>
+    <button type="button" onclick="showTab('horas')">⏱️<span>Horas</span></button>
     <button type="button" onclick="showTab('ajustes')">⚙️<span>Ajustes</span></button>
   </nav>
 
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 
 </body>
 </html>
