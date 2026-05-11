@@ -23,6 +23,8 @@ let data = JSON.parse(localStorage.getItem("calendarioLaboralData")) || {
   observations: {}
 };
 
+if (!data.marks) data.marks = {};
+if (!data.counters) data.counters = {};
 if (!data.permits) data.permits = [];
 if (!data.observations) data.observations = {};
 
@@ -32,39 +34,53 @@ function saveData() {
 
 function ensureCounters() {
   categories.forEach(cat => {
-    if (!data.counters[cat.name]) data.counters[cat.name] = { total: 0 };
+    if (!data.counters[cat.name]) {
+      data.counters[cat.name] = { total: 0 };
+    }
   });
   saveData();
 }
 
 function init() {
-  document.getElementById("yearLabel").textContent = "Año " + selectedYear;
+  const yearLabel = document.getElementById("yearLabel");
+  if (yearLabel) {
+    yearLabel.textContent = "Año " + selectedYear;
+  }
 
-  const select = document.getElementById("categorySelect");
-  const modalSelect = document.getElementById("modalCategory");
-
-  select.innerHTML = "";
-  modalSelect.innerHTML = "";
-
-  categories.forEach(cat => {
-    const option1 = document.createElement("option");
-    option1.value = cat.name;
-    option1.textContent = cat.name;
-    select.appendChild(option1);
-
-    const option2 = document.createElement("option");
-    option2.value = cat.name;
-    option2.textContent = cat.name;
-    modalSelect.appendChild(option2);
-  });
-
+  fillCategorySelects();
   createYearSelector();
   ensureCounters();
   renderCalendar();
 }
 
+function fillCategorySelects() {
+  const select = document.getElementById("categorySelect");
+  const modalSelect = document.getElementById("modalCategory");
+
+  if (select) {
+    select.innerHTML = "";
+    categories.forEach(cat => {
+      const option = document.createElement("option");
+      option.value = cat.name;
+      option.textContent = cat.name;
+      select.appendChild(option);
+    });
+  }
+
+  if (modalSelect) {
+    modalSelect.innerHTML = "";
+    categories.forEach(cat => {
+      const option = document.createElement("option");
+      option.value = cat.name;
+      option.textContent = cat.name;
+      modalSelect.appendChild(option);
+    });
+  }
+}
+
 function createYearSelector() {
   const selectorBox = document.querySelector(".selector");
+  if (!selectorBox) return;
 
   if (!document.getElementById("yearSelect")) {
     const wrapper = document.createElement("div");
@@ -87,15 +103,27 @@ function createYearSelector() {
 }
 
 function changeYear() {
-  selectedYear = Number(document.getElementById("yearSelect").value);
+  const yearSelect = document.getElementById("yearSelect");
+  if (!yearSelect) return;
+
+  selectedYear = Number(yearSelect.value);
   localStorage.setItem("selectedCalendarYear", selectedYear);
-  document.getElementById("yearLabel").textContent = "Año " + selectedYear;
+
+  const yearLabel = document.getElementById("yearLabel");
+  if (yearLabel) {
+    yearLabel.textContent = "Año " + selectedYear;
+  }
+
   renderCalendar();
 }
 
 function showTab(id) {
   document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
+
+  const selectedTab = document.getElementById(id);
+  if (selectedTab) {
+    selectedTab.classList.add("active");
+  }
 
   if (id === "contadores") renderCounters();
   if (id === "permisos") renderPermits();
@@ -103,6 +131,8 @@ function showTab(id) {
 
 function renderCalendar() {
   const grid = document.getElementById("calendarGrid");
+  if (!grid) return;
+
   grid.innerHTML = "";
 
   const monthNames = [
@@ -152,7 +182,9 @@ function renderCalendar() {
       const day = document.createElement("div");
       day.className = "day";
 
-      if (holidays[dateKey]) day.classList.add("holiday");
+      if (holidays[dateKey]) {
+        day.classList.add("holiday");
+      }
 
       let html = `<strong>${d}</strong>`;
 
@@ -192,29 +224,76 @@ function getDayMarks(dateKey) {
 function openDayModal(dateKey) {
   selectedDayKey = dateKey;
 
-  document.getElementById("modalDate").textContent = formatDateLong(dateKey);
-  document.getElementById("dayObservation").value = data.observations[dateKey] || "";
+  const modal = document.getElementById("dayModal");
+
+  if (!modal) {
+    quickMarkDay(dateKey);
+    return;
+  }
+
+  const modalDate = document.getElementById("modalDate");
+  if (modalDate) {
+    modalDate.textContent = formatDateLong(dateKey);
+  }
+
+  const observationInput = document.getElementById("dayObservation");
+  if (observationInput) {
+    observationInput.value = data.observations[dateKey] || "";
+  }
 
   const holidays = getSpanishNationalHolidays(Number(dateKey.split("-")[0]));
   const holidayBox = document.getElementById("modalHoliday");
 
-  if (holidays[dateKey]) {
-    holidayBox.innerHTML = `<div class="holiday-box">Festivo nacional: ${holidays[dateKey]}</div>`;
-  } else {
-    holidayBox.innerHTML = "";
+  if (holidayBox) {
+    if (holidays[dateKey]) {
+      holidayBox.innerHTML = `<div class="holiday-box">Festivo nacional: ${holidays[dateKey]}</div>`;
+    } else {
+      holidayBox.innerHTML = "";
+    }
   }
 
   renderModalDayInfo();
-  document.getElementById("dayModal").classList.remove("hidden");
+  modal.classList.remove("hidden");
+}
+
+function quickMarkDay(dateKey) {
+  const selected = document.getElementById("categorySelect")?.value;
+  if (!selected) return;
+
+  if (!Array.isArray(data.marks[dateKey])) {
+    data.marks[dateKey] = data.marks[dateKey] ? [data.marks[dateKey]] : [];
+  }
+
+  const exists = data.marks[dateKey].some(m => m.category === selected);
+
+  if (exists) {
+    data.marks[dateKey] = data.marks[dateKey].filter(m => m.category !== selected);
+    if (data.marks[dateKey].length === 0) delete data.marks[dateKey];
+  } else {
+    data.marks[dateKey].push({
+      category: selected,
+      amount: 1,
+      createdAt: new Date().toISOString()
+    });
+  }
+
+  saveData();
+  renderCalendar();
 }
 
 function closeDayModal() {
   selectedDayKey = null;
-  document.getElementById("dayModal").classList.add("hidden");
+
+  const modal = document.getElementById("dayModal");
+  if (modal) {
+    modal.classList.add("hidden");
+  }
 }
 
 function renderModalDayInfo() {
   const box = document.getElementById("modalDayInfo");
+  if (!box || !selectedDayKey) return;
+
   const marks = getDayMarks(selectedDayKey);
 
   if (marks.length === 0) {
@@ -243,7 +322,9 @@ function renderModalDayInfo() {
 function addCategoryToSelectedDay() {
   if (!selectedDayKey) return;
 
-  const selected = document.getElementById("modalCategory").value;
+  const selected = document.getElementById("modalCategory")?.value;
+  if (!selected) return;
+
   const cat = categories.find(c => c.name === selected);
 
   if (!Array.isArray(data.marks[selectedDayKey])) {
@@ -259,7 +340,7 @@ function addCategoryToSelectedDay() {
 
   let amount = 1;
 
-  if (cat.unit === "horas") {
+  if (cat && cat.unit === "horas") {
     const input = prompt(`¿Cuántas horas quieres descontar de "${selected}"?`, "1");
     if (input === null || input === "") return;
 
@@ -302,6 +383,8 @@ function removeCategoryFromSelectedDay(index) {
 }
 
 function editDayCategoryAmount(index) {
+  if (!selectedDayKey) return;
+
   const marks = getDayMarks(selectedDayKey);
   const item = marks[index];
   const cat = categories.find(c => c.name === item.category);
@@ -328,7 +411,8 @@ function editDayCategoryAmount(index) {
 function saveDayObservation() {
   if (!selectedDayKey) return;
 
-  const note = document.getElementById("dayObservation").value.trim();
+  const input = document.getElementById("dayObservation");
+  const note = input ? input.value.trim() : "";
 
   if (note) {
     data.observations[selectedDayKey] = note;
@@ -345,6 +429,8 @@ function renderCounters() {
   ensureCounters();
 
   const list = document.getElementById("counterList");
+  if (!list) return;
+
   list.innerHTML = "";
 
   categories.forEach(cat => {
@@ -383,7 +469,9 @@ function renderCounters() {
 function saveCounters() {
   document.querySelectorAll("[data-counter]").forEach(input => {
     const name = input.getAttribute("data-counter");
-    data.counters[name] = { total: Number(input.value || 0) };
+    data.counters[name] = {
+      total: Number(input.value || 0)
+    };
   });
 
   saveData();
@@ -409,6 +497,7 @@ function calculateUsed(categoryName) {
 
 function renderPermits() {
   const list = document.getElementById("historyList");
+  if (!list) return;
 
   const options = permitCategories
     .map(cat => `<option value="${cat.name}">${cat.name}</option>`)
@@ -440,6 +529,8 @@ function renderPermits() {
 
   const rows = document.getElementById("permitRows");
 
+  if (!rows) return;
+
   if (permitsSorted.length === 0) {
     rows.innerHTML = "<p>No hay permisos registrados.</p>";
     return;
@@ -460,9 +551,9 @@ function renderPermits() {
 }
 
 function addPermit() {
-  const date = document.getElementById("permitDate").value;
-  const type = document.getElementById("permitType").value;
-  const note = document.getElementById("permitNote").value.trim();
+  const date = document.getElementById("permitDate")?.value;
+  const type = document.getElementById("permitType")?.value;
+  const note = document.getElementById("permitNote")?.value.trim() || "";
 
   if (!date) {
     alert("Selecciona una fecha.");
@@ -567,8 +658,8 @@ function clearAll() {
   }
 }
 
+document.addEventListener("DOMContentLoaded", init);
+
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
-
-init();
