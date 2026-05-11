@@ -94,7 +94,8 @@ main {
 
 .selector label,
 .counter-row label,
-.history-card label {
+.history-card label,
+.modal-content label {
   display: block;
   font-weight: 900;
   margin-bottom: 7px;
@@ -146,7 +147,7 @@ input {
 }
 
 .day {
-  height: 78px;
+  height: 82px;
   min-width: 0;
   border-radius: 16px;
   background: #eef2f7;
@@ -182,7 +183,6 @@ input {
 .holiday-chip {
   display: block;
   width: 100%;
-  max-width: 100%;
   background: #f97316;
   color: white;
   font-size: 7px;
@@ -198,7 +198,6 @@ input {
 .cat-chip {
   display: block;
   width: 100%;
-  max-width: 100%;
   color: white;
   font-size: 7px;
   font-weight: 900;
@@ -208,6 +207,14 @@ input {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.note-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0f172a;
+  margin-top: 3px;
 }
 
 .counter-row {
@@ -233,6 +240,12 @@ button.danger {
   background: linear-gradient(135deg, #dc2626, #991b1b);
 }
 
+button.secondary {
+  background: #e2e8f0;
+  color: #0f172a;
+  box-shadow: none;
+}
+
 .badge {
   display: inline-block;
   max-width: 100%;
@@ -244,4 +257,84 @@ button.danger {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 28px 28px 18px 18px;
+  padding: 18px;
+  box-shadow: 0 -12px 40px rgba(15,23,42,0.35);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modal-header h2 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.close-btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  margin: 0 0 12px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #0f172a;
+  box-shadow: none;
+}
+
+.day-detail-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.day-detail-item p {
+  margin: 0 0 8px;
+}
+
+.holiday-box {
+  background: #fff7ed;
+  border: 1px solid #fb923c;
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 12px;
+  font-weight: 900;
+  color: #9a3412;
+}
+
+.observation-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 16px;
+  padding: 12px;
+  margin: 12px 0;
+  color: #1e3a8a;
 }
