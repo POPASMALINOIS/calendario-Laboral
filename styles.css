@@ -215,14 +215,38 @@ input:focus {
 /* NAVEGACIÓN DE MESES */
 
 .month-navigation {
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.month-navigation button {
+  width: 46px;
+  min-width: 46px;
+  height: 46px;
+  padding: 0;
+  margin: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #2563eb;
+  font-size: 32px;
+  line-height: 1;
+  box-shadow: none;
+}
+
+.month-navigation button:active {
+  background: rgba(37,99,235,0.12);
+  transform: scale(0.94);
 }
 
 #currentMonthLabel {
   flex: 1;
   text-align: center;
+  font-size: 21px;
   font-weight: 950;
-  font-size: 17px;
+  color: #0f172a;
 }
 
 /* CALENDARIO */
@@ -235,25 +259,8 @@ input:focus {
   box-shadow: 0 16px 40px rgba(15,23,42,0.12);
 }
 
-.swipe-month {
-  animation: monthFade 0.18s ease;
-}
-
-@keyframes monthFade {
-  from {
-    opacity: 0;
-    transform: translateX(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 .month h3 {
-  margin: 4px 0 18px;
-  font-size: 30px;
-  font-weight: 950;
+  display: none;
 }
 
 .weekdays,
