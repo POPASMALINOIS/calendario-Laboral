@@ -206,7 +206,7 @@ function renderCalendar() {
       }
 
       day.innerHTML = html;
-      day.onclick = () => openDayModal(dateKey);
+      attachDayEvents(day, dateKey);
 
       days.appendChild(day);
     }
@@ -214,6 +214,47 @@ function renderCalendar() {
     box.appendChild(days);
     grid.appendChild(box);
   }
+}
+
+function attachDayEvents(day, dateKey) {
+  let pressTimer = null;
+  let longPressed = false;
+
+  const startPress = () => {
+    longPressed = false;
+    pressTimer = setTimeout(() => {
+      longPressed = true;
+      pressTimer = null;
+      openDayModal(dateKey);
+    }, 600);
+  };
+
+  const endPress = () => {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+      quickMarkDay(dateKey);
+    }
+  };
+
+  const cancelPress = () => {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+    }
+  };
+
+  day.addEventListener("touchstart", startPress, { passive: true });
+  day.addEventListener("touchend", endPress, { passive: true });
+  day.addEventListener("touchcancel", cancelPress, { passive: true });
+
+  day.addEventListener("mousedown", startPress);
+  day.addEventListener("mouseup", endPress);
+  day.addEventListener("mouseleave", cancelPress);
+
+  day.addEventListener("contextmenu", e => {
+    e.preventDefault();
+  });
 }
 
 function getDayMarks(dateKey) {
@@ -260,6 +301,8 @@ function quickMarkDay(dateKey) {
   const selected = document.getElementById("categorySelect")?.value;
   if (!selected) return;
 
+  const cat = categories.find(c => c.name === selected);
+
   if (!Array.isArray(data.marks[dateKey])) {
     data.marks[dateKey] = data.marks[dateKey] ? [data.marks[dateKey]] : [];
   }
@@ -270,9 +313,15 @@ function quickMarkDay(dateKey) {
     data.marks[dateKey] = data.marks[dateKey].filter(m => m.category !== selected);
     if (data.marks[dateKey].length === 0) delete data.marks[dateKey];
   } else {
+    let amount = 1;
+
+    if (cat && cat.unit === "horas") {
+      amount = 1;
+    }
+
     data.marks[dateKey].push({
       category: selected,
-      amount: 1,
+      amount,
       createdAt: new Date().toISOString()
     });
   }
