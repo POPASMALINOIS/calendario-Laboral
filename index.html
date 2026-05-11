@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Calendario Laboral</title>
 
-  <link rel="stylesheet" href="styles.css?v=8" />
+  <link rel="stylesheet" href="styles.css?v=9" />
 
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#0f172a" />
@@ -13,6 +13,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Calendario Laboral" />
 </head>
+
 <body>
 
   <header>
@@ -53,9 +54,9 @@
 
   </main>
 
-  <!-- PANEL DÍA -->
   <div id="dayModal" class="modal hidden">
     <div class="modal-content">
+
       <div class="modal-header">
         <h2 id="modalDate"></h2>
         <button type="button" class="close-btn" onclick="closeDayModal()">✕</button>
@@ -71,13 +72,14 @@
       <div id="modalDayInfo"></div>
 
       <label for="dayObservation">Observación</label>
-      <input type="text" id="dayObservation" placeholder="Añadir nota del día...">
+      <input type="text" id="dayObservation" placeholder="Añadir nota del día..." />
 
       <button type="button" onclick="saveDayObservation()">Guardar observación</button>
+
     </div>
   </div>
 
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 
 </body>
 </html>
