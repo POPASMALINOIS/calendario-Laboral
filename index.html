@@ -3,53 +3,98 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Calendario Laboral</title>
+  <title>Calendario Laboral Pro</title>
 
-  <link rel="stylesheet" href="styles.css?v=12" />
+  <link rel="stylesheet" href="styles.css?v=13" />
 
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#111827" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Calendario Laboral" />
+  <meta name="apple-mobile-web-app-title" content="Calendario Pro" />
 </head>
 
 <body>
 
+  <!-- CABECERA APP -->
   <header class="app-header">
     <div class="header-top">
       <div>
-        <span class="eyebrow">Control anual</span>
-        <h1>Calendario Laboral</h1>
+        <span class="eyebrow">Gestión profesional</span>
+        <h1>Calendario Laboral Pro</h1>
         <p id="yearLabel"></p>
       </div>
-      <div class="header-icon">✦</div>
+      <div class="header-icon">📅</div>
     </div>
   </header>
 
-  <nav class="bottom-nav">
-    <button type="button" onclick="showTab('calendario')">📅<span>Calendario</span></button>
-    <button type="button" onclick="showTab('contadores')">📊<span>Contadores</span></button>
-    <button type="button" onclick="showTab('permisos')">📝<span>Permisos</span></button>
-  </nav>
-
+  <!-- CONTENIDO -->
   <main>
 
-    <section id="calendario" class="tab active">
+    <!-- INICIO -->
+    <section id="inicio" class="tab active">
+      <h2>Resumen general</h2>
+
+      <div class="dashboard-grid">
+
+        <div class="dashboard-card">
+          <span>Vacaciones</span>
+          <strong id="dashboardVacaciones">0</strong>
+          <small>Días restantes</small>
+        </div>
+
+        <div class="dashboard-card">
+          <span>Asuntos propios</span>
+          <strong id="dashboardAsuntos">0</strong>
+          <small>Días restantes</small>
+        </div>
+
+        <div class="dashboard-card">
+          <span>Acompañamiento</span>
+          <strong id="dashboardHoras">0</strong>
+          <small>Horas restantes</small>
+        </div>
+
+        <div class="dashboard-card">
+          <span>Permisos</span>
+          <strong id="dashboardPermisos">0</strong>
+          <small>Registrados</small>
+        </div>
+
+      </div>
+
+      <div class="glass-card">
+        <h3>Próximos permisos</h3>
+        <div id="dashboardUpcoming"></div>
+      </div>
+    </section>
+
+    <!-- CALENDARIO -->
+    <section id="calendario" class="tab">
       <div class="selector glass-card">
+
         <label for="categorySelect">Categoría rápida</label>
         <select id="categorySelect"></select>
+
+        <div class="month-navigation">
+          <button type="button" onclick="previousMonth()">◀</button>
+          <span id="currentMonthLabel"></span>
+          <button type="button" onclick="nextMonth()">▶</button>
+        </div>
+
       </div>
 
       <div id="calendarGrid"></div>
     </section>
 
+    <!-- CONTADORES -->
     <section id="contadores" class="tab">
       <h2>Contadores de permisos</h2>
       <div id="counterList"></div>
       <button type="button" onclick="saveCounters()">Guardar contadores</button>
     </section>
 
+    <!-- PERMISOS -->
     <section id="permisos" class="tab">
       <h2>Gestión de permisos</h2>
       <div id="historyList"></div>
@@ -58,8 +103,26 @@
       <button type="button" class="danger" onclick="clearAll()">Borrar todo</button>
     </section>
 
+    <!-- AJUSTES -->
+    <section id="ajustes" class="tab">
+      <h2>Ajustes</h2>
+
+      <div class="glass-card">
+        <label for="workerName">Nombre trabajador</label>
+        <input type="text" id="workerName" placeholder="Ej: Juan Pérez" />
+
+        <button type="button" onclick="saveWorkerName()">Guardar nombre</button>
+      </div>
+
+      <div class="glass-card">
+        <button type="button" onclick="exportData()">Exportar copia de seguridad</button>
+        <button type="button" class="danger" onclick="clearAll()">Reiniciar aplicación</button>
+      </div>
+    </section>
+
   </main>
 
+  <!-- MODAL DÍA -->
   <div id="dayModal" class="modal hidden">
     <div class="modal-content">
 
@@ -85,7 +148,16 @@
     </div>
   </div>
 
-  <script src="app.js?v=10"></script>
+  <!-- MENÚ INFERIOR -->
+  <nav class="bottom-nav">
+    <button type="button" onclick="showTab('inicio')">🏠<span>Inicio</span></button>
+    <button type="button" onclick="showTab('calendario')">📅<span>Calendario</span></button>
+    <button type="button" onclick="showTab('contadores')">📊<span>Contadores</span></button>
+    <button type="button" onclick="showTab('permisos')">📝<span>Permisos</span></button>
+    <button type="button" onclick="showTab('ajustes')">⚙️<span>Ajustes</span></button>
+  </nav>
+
+  <script src="app.js?v=13"></script>
 
 </body>
 </html>
