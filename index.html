@@ -3,15 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
   <title>Calendario Laboral Pro</title>
 
-  <link rel="stylesheet" href="styles.css?v=18" />
+  <meta name="theme-color" content="#111111" />
+  <meta name="description" content="Gestión profesional de turnos, permisos, vacaciones y horas extra." />
 
   <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#111111" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Calendario Pro" />
+
+  <link rel="stylesheet" href="styles.css?v=18" />
 </head>
 
 <body>
@@ -29,6 +34,7 @@
 
   <main>
 
+    <!-- INICIO -->
     <section id="inicio" class="tab active">
       <h2>Resumen general</h2>
 
@@ -76,8 +82,10 @@
       </div>
     </section>
 
+    <!-- CALENDARIO -->
     <section id="calendario" class="tab">
       <div class="selector glass-card compact-selector">
+
         <div class="calendar-mode">
           <button type="button" id="btnYear" onclick="setCalendarView('year')">Año</button>
           <button type="button" id="btnMonth" onclick="setCalendarView('month')">Mes</button>
@@ -90,7 +98,7 @@
             <select id="categorySelect"></select>
           </div>
 
-          <div class="year-selector-inline" id="yearSelectorHolder"></div>
+          <div id="yearSelectorHolder"></div>
         </div>
 
         <div class="month-navigation">
@@ -98,17 +106,20 @@
           <span id="currentMonthLabel"></span>
           <button type="button" onclick="nextPeriod()">›</button>
         </div>
+
       </div>
 
       <div id="calendarGrid"></div>
     </section>
 
+    <!-- CONTADORES -->
     <section id="contadores" class="tab">
       <h2>Contadores</h2>
       <div id="counterList"></div>
       <button type="button" onclick="saveCounters()">Guardar contadores</button>
     </section>
 
+    <!-- PERMISOS -->
     <section id="permisos" class="tab">
       <h2>Permisos</h2>
       <div id="historyList"></div>
@@ -117,6 +128,7 @@
       <button type="button" class="danger" onclick="clearAll()">Borrar todo</button>
     </section>
 
+    <!-- HORAS EXTRA -->
     <section id="horas" class="tab">
       <h2>Horas extra</h2>
 
@@ -128,7 +140,7 @@
         <input type="number" step="0.25" min="0" id="extraHours" placeholder="Ej: 2" />
 
         <label for="extraNote">Observación</label>
-        <input type="text" id="extraNote" placeholder="Ej: cierre, inventario, refuerzo..." />
+        <input type="text" id="extraNote" placeholder="Ej: refuerzo, cierre..." />
 
         <button type="button" onclick="addExtraHours()">Añadir horas extra</button>
       </div>
@@ -136,6 +148,7 @@
       <div id="extraHoursList"></div>
     </section>
 
+    <!-- AJUSTES -->
     <section id="ajustes" class="tab">
       <h2>Ajustes</h2>
 
@@ -147,7 +160,8 @@
 
       <div class="glass-card">
         <h3>Colores de categorías</h3>
-        <p class="settings-note">Personaliza los colores que se verán en el calendario.</p>
+        <p class="settings-note">Personaliza los colores del calendario.</p>
+
         <div id="categoryColorSettings"></div>
 
         <button type="button" onclick="saveCategoryColors()">Guardar colores</button>
@@ -162,6 +176,7 @@
 
   </main>
 
+  <!-- MODAL -->
   <div id="dayModal" class="modal hidden">
     <div class="modal-content">
 
@@ -180,13 +195,14 @@
       <div id="modalDayInfo"></div>
 
       <label for="dayObservation">Observación</label>
-      <input type="text" id="dayObservation" placeholder="Añadir nota del día..." />
+      <input type="text" id="dayObservation" placeholder="Añadir nota..." />
 
       <button type="button" onclick="saveDayObservation()">Guardar observación</button>
 
     </div>
   </div>
 
+  <!-- MENÚ -->
   <nav class="bottom-nav">
     <button type="button" onclick="showTab('inicio')">🏠<span>Inicio</span></button>
     <button type="button" onclick="showTab('calendario')">📅<span>Calendario</span></button>
@@ -196,7 +212,23 @@
     <button type="button" onclick="showTab('ajustes')">⚙️<span>Ajustes</span></button>
   </nav>
 
+  <!-- APP -->
   <script src="app.js?v=18"></script>
+
+  <!-- SERVICE WORKER -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./service-worker.js")
+          .then(registration => {
+            console.log("Service Worker registrado correctamente:", registration.scope);
+          })
+          .catch(error => {
+            console.log("Error al registrar Service Worker:", error);
+          });
+      });
+    }
+  </script>
 
 </body>
 </html>
