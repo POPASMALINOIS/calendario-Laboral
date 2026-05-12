@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Calendario Laboral Pro</title>
 
-  <link rel="stylesheet" href="styles.css?v=16" />
+  <link rel="stylesheet" href="styles.css?v=18" />
 
   <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#111827" />
+  <meta name="theme-color" content="#111111" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Calendario Pro" />
@@ -77,15 +77,21 @@
     </section>
 
     <section id="calendario" class="tab">
-      <div class="selector glass-card">
+      <div class="selector glass-card compact-selector">
         <div class="calendar-mode">
           <button type="button" id="btnYear" onclick="setCalendarView('year')">Año</button>
           <button type="button" id="btnMonth" onclick="setCalendarView('month')">Mes</button>
           <button type="button" id="btnWeek" onclick="setCalendarView('week')">Semana</button>
         </div>
 
-        <label for="categorySelect">Categoría rápida</label>
-        <select id="categorySelect"></select>
+        <div class="quick-row">
+          <div>
+            <label for="categorySelect">Categoría rápida</label>
+            <select id="categorySelect"></select>
+          </div>
+
+          <div class="year-selector-inline" id="yearSelectorHolder"></div>
+        </div>
 
         <div class="month-navigation">
           <button type="button" onclick="previousPeriod()">‹</button>
@@ -140,6 +146,15 @@
       </div>
 
       <div class="glass-card">
+        <h3>Colores de categorías</h3>
+        <p class="settings-note">Personaliza los colores que se verán en el calendario.</p>
+        <div id="categoryColorSettings"></div>
+
+        <button type="button" onclick="saveCategoryColors()">Guardar colores</button>
+        <button type="button" class="secondary" onclick="resetCategoryColors()">Restablecer colores</button>
+      </div>
+
+      <div class="glass-card">
         <button type="button" onclick="exportData()">Exportar copia de seguridad</button>
         <button type="button" class="danger" onclick="clearAll()">Reiniciar aplicación</button>
       </div>
@@ -181,7 +196,7 @@
     <button type="button" onclick="showTab('ajustes')">⚙️<span>Ajustes</span></button>
   </nav>
 
-  <script src="app.js?v=16"></script>
+  <script src="app.js?v=18"></script>
 
 </body>
 </html>
