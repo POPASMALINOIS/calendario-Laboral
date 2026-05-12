@@ -21,6 +21,14 @@
 
 <body>
 
+  <!-- SPLASH SCREEN -->
+  <div id="splash-screen">
+    <div class="splash-logo">📅</div>
+    <h1>Calendario Laboral Pro</h1>
+    <p>Gestión profesional</p>
+  </div>
+
+  <!-- HEADER -->
   <header class="app-header">
     <div class="header-top">
       <div>
@@ -214,6 +222,20 @@
 
   <!-- APP -->
   <script src="app.js?v=18"></script>
+
+  <!-- SPLASH LOGIC -->
+  <script>
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        const splash = document.getElementById("splash-screen");
+        if (splash) {
+          splash.style.opacity = "0";
+          splash.style.pointerEvents = "none";
+          setTimeout(() => splash.remove(), 600);
+        }
+      }, 1800);
+    });
+  </script>
 
   <!-- SERVICE WORKER -->
   <script>
