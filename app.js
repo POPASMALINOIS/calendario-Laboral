@@ -6,7 +6,7 @@ let selectedWeekDate = new Date();
 let calendarView = localStorage.getItem("calendarView") || "month";
 let selectedDayKey = null;
 
-const categories = [
+const defaultCategories = [
   { name: "Turno Mañana", color: "#2563eb", unit: "días" },
   { name: "Día Blanco", color: "#64748b", unit: "días" },
   { name: "Asuntos Propios", color: "#7c3aed", unit: "días" },
@@ -18,15 +18,14 @@ const categories = [
   { name: "Acompañamiento hijos", color: "#9333ea", unit: "horas" }
 ];
 
-const permitCategories = categories.filter(c => c.name !== "Turno Mañana");
-
 let data = JSON.parse(localStorage.getItem("calendarioLaboralData")) || {
   marks: {},
   counters: {},
   permits: [],
   observations: {},
   extraHours: [],
-  workerName: ""
+  workerName: "",
+  categoryColors: {}
 };
 
 if (!data.marks) data.marks = {};
@@ -35,16 +34,26 @@ if (!data.permits) data.permits = [];
 if (!data.observations) data.observations = {};
 if (!data.extraHours) data.extraHours = [];
 if (!data.workerName) data.workerName = "";
+if (!data.categoryColors) data.categoryColors = {};
+
+function getCategories() {
+  return defaultCategories.map(cat => ({
+    ...cat,
+    color: data.categoryColors[cat.name] || cat.color
+  }));
+}
+
+function getCategory(name) {
+  return getCategories().find(c => c.name === name);
+}
 
 function saveData() {
   localStorage.setItem("calendarioLaboralData", JSON.stringify(data));
 }
 
 function ensureCounters() {
-  categories.forEach(cat => {
-    if (!data.counters[cat.name]) {
-      data.counters[cat.name] = { total: 0 };
-    }
+  getCategories().forEach(cat => {
+    if (!data.counters[cat.name]) data.counters[cat.name] = { total: 0 };
   });
 }
 
@@ -57,6 +66,7 @@ function init() {
   renderDashboard();
   renderCalendar();
   loadWorkerName();
+  renderCategoryColorSettings();
 }
 
 function updateHeader() {
@@ -69,6 +79,7 @@ function updateHeader() {
 }
 
 function fillCategorySelects() {
+  const categories = getCategories();
   const select = document.getElementById("categorySelect");
   const modalSelect = document.getElementById("modalCategory");
 
@@ -86,26 +97,20 @@ function fillCategorySelects() {
 }
 
 function createYearSelector() {
-  const selector = document.querySelector(".selector");
-  if (!selector || document.getElementById("yearSelect")) return;
-
-  const wrapper = document.createElement("div");
-  wrapper.className = "year-selector";
+  const holder = document.getElementById("yearSelectorHolder");
+  if (!holder) return;
 
   let options = "";
-
   for (let y = currentYear - 2; y <= currentYear + 6; y++) {
     options += `<option value="${y}" ${y === selectedYear ? "selected" : ""}>${y}</option>`;
   }
 
-  wrapper.innerHTML = `
+  holder.innerHTML = `
     <label for="yearSelect">Año</label>
     <select id="yearSelect" onchange="changeYear()">
       ${options}
     </select>
   `;
-
-  selector.appendChild(wrapper);
 }
 
 function changeYear() {
@@ -199,7 +204,10 @@ function showTab(id) {
   if (id === "contadores") renderCounters();
   if (id === "permisos") renderPermits();
   if (id === "horas") renderExtraHours();
-  if (id === "ajustes") loadWorkerName();
+  if (id === "ajustes") {
+    loadWorkerName();
+    renderCategoryColorSettings();
+  }
 }
 
 function renderDashboard() {
@@ -214,12 +222,12 @@ function renderDashboard() {
   if (!upcoming) return;
 
   const today = new Date();
-  today.setHours(0,0,0,0);
+  today.setHours(0, 0, 0, 0);
 
   const upcomingPermits = [...data.permits]
     .filter(p => {
       const d = new Date(p.date);
-      d.setHours(0,0,0,0);
+      d.setHours(0, 0, 0, 0);
       return d >= today;
     })
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -348,7 +356,7 @@ function renderWeekCalendar() {
     const content = dayCard.querySelector(".week-day-content");
 
     marks.forEach(item => {
-      const cat = categories.find(c => c.name === item.category);
+      const cat = getCategory(item.category);
       content.innerHTML += `<span class="badge week-badge" style="background:${cat?.color || "#333"}">${item.category}</span>`;
     });
 
@@ -374,11 +382,13 @@ function buildMiniMonth(year, month) {
 
   const weekdays = document.createElement("div");
   weekdays.className = "mini-weekdays";
+
   ["L","M","X","J","V","S","D"].forEach(d => {
     const el = document.createElement("div");
     el.textContent = d;
     weekdays.appendChild(el);
   });
+
   box.appendChild(weekdays);
 
   const days = document.createElement("div");
@@ -407,10 +417,25 @@ function buildMiniMonth(year, month) {
 function buildDayCell(year, month, d, className) {
   const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
   const holidays = getSpanishNationalHolidays(year);
+  const marks = getDayMarks(dateKey);
+  const extras = getExtraHoursForDate(dateKey);
+
   const day = document.createElement("div");
   day.className = className;
 
   if (holidays[dateKey]) day.classList.add("holiday");
+
+  const colors = marks
+    .map(item => getCategory(item.category)?.color)
+    .filter(Boolean);
+
+  if (extras.length > 0) colors.push("#d6b56d");
+
+  const background = getCellBackground(colors);
+  if (background) {
+    day.style.background = background;
+    day.classList.add("painted-day");
+  }
 
   let html = `<strong>${d}</strong>`;
 
@@ -418,29 +443,43 @@ function buildDayCell(year, month, d, className) {
     html += `<span class="holiday-chip">Festivo</span>`;
   }
 
-  getDayMarks(dateKey).forEach(item => {
-    const cat = categories.find(c => c.name === item.category);
-    if (cat) {
-      html += className === "mini-day"
-        ? `<span class="mini-dot" style="background:${cat.color}"></span>`
-        : `<span class="cat-chip" style="background:${cat.color}">${cat.name}</span>`;
+  if (className === "day") {
+    marks.forEach(item => {
+      const cat = getCategory(item.category);
+      if (cat) html += `<span class="cat-chip">${item.category}</span>`;
+    });
+
+    if (extras.length > 0) {
+      html += `<span class="cat-chip extra-chip">⏱️ Horas extra</span>`;
     }
-  });
-
-  const extras = getExtraHoursForDate(dateKey);
-  if (extras.length > 0) {
-    html += className === "mini-day"
-      ? `<span class="mini-dot extra-dot"></span>`
-      : `<span class="cat-chip extra-chip">⏱️ Horas extra</span>`;
+  } else {
+    if (colors.length > 0) html += `<span class="mini-indicator"></span>`;
   }
 
-  if (data.observations[dateKey]) {
-    html += `<span class="note-dot"></span>`;
-  }
+  if (data.observations[dateKey]) html += `<span class="note-dot"></span>`;
 
   day.innerHTML = html;
   attachDayEvents(day, dateKey);
   return day;
+}
+
+function getCellBackground(colors) {
+  if (!colors || colors.length === 0) return "";
+
+  if (colors.length === 1) {
+    return colors[0];
+  }
+
+  const step = 100 / colors.length;
+  const parts = [];
+
+  colors.forEach((color, index) => {
+    const start = Math.round(index * step);
+    const end = Math.round((index + 1) * step);
+    parts.push(`${color} ${start}% ${end}%`);
+  });
+
+  return `linear-gradient(135deg, ${parts.join(", ")})`;
 }
 
 function attachDayEvents(day, dateKey) {
@@ -548,7 +587,7 @@ function renderModalDayInfo() {
   }
 
   marks.forEach((item, index) => {
-    const cat = categories.find(c => c.name === item.category);
+    const cat = getCategory(item.category);
 
     html += `
       <div class="day-detail-item">
@@ -583,7 +622,7 @@ function addCategoryToSelectedDay() {
   const selected = document.getElementById("modalCategory")?.value;
   if (!selected) return;
 
-  const cat = categories.find(c => c.name === selected);
+  const cat = getCategory(selected);
 
   if (!Array.isArray(data.marks[selectedDayKey])) {
     data.marks[selectedDayKey] = data.marks[selectedDayKey] ? [data.marks[selectedDayKey]] : [];
@@ -602,6 +641,7 @@ function addCategoryToSelectedDay() {
     const input = prompt(`¿Cuántas horas quieres descontar de "${selected}"?`, "1");
     if (input === null || input === "") return;
     amount = Number(input);
+
     if (isNaN(amount) || amount <= 0) {
       alert("Introduce un número válido.");
       return;
@@ -627,11 +667,8 @@ function removeCategoryFromSelectedDay(index) {
   const marks = getDayMarks(selectedDayKey);
   marks.splice(index, 1);
 
-  if (marks.length === 0) {
-    delete data.marks[selectedDayKey];
-  } else {
-    data.marks[selectedDayKey] = marks;
-  }
+  if (marks.length === 0) delete data.marks[selectedDayKey];
+  else data.marks[selectedDayKey] = marks;
 
   saveData();
   renderDashboard();
@@ -644,10 +681,9 @@ function editDayCategoryAmount(index) {
 
   const marks = getDayMarks(selectedDayKey);
   const item = marks[index];
-  const cat = categories.find(c => c.name === item.category);
+  const cat = getCategory(item.category);
 
   const newAmount = prompt(`Introduce cantidad en ${cat?.unit || "unidades"}:`, item.amount || 1);
-
   if (newAmount === null || newAmount === "") return;
 
   const value = Number(newAmount);
@@ -672,11 +708,8 @@ function saveDayObservation() {
   const input = document.getElementById("dayObservation");
   const note = input ? input.value.trim() : "";
 
-  if (note) {
-    data.observations[selectedDayKey] = note;
-  } else {
-    delete data.observations[selectedDayKey];
-  }
+  if (note) data.observations[selectedDayKey] = note;
+  else delete data.observations[selectedDayKey];
 
   saveData();
   renderCalendar();
@@ -689,7 +722,7 @@ function renderCounters() {
 
   list.innerHTML = "";
 
-  categories.forEach(cat => {
+  getCategories().forEach(cat => {
     const used = calculateUsed(cat.name);
     const total = Number(data.counters[cat.name]?.total || 0);
     const remaining = total - used;
@@ -717,10 +750,7 @@ function renderCounters() {
 function saveCounters() {
   document.querySelectorAll("[data-counter]").forEach(input => {
     const name = input.getAttribute("data-counter");
-
-    data.counters[name] = {
-      total: Number(input.value || 0)
-    };
+    data.counters[name] = { total: Number(input.value || 0) };
   });
 
   saveData();
@@ -732,6 +762,8 @@ function saveCounters() {
 function renderPermits() {
   const list = document.getElementById("historyList");
   if (!list) return;
+
+  const permitCategories = getCategories().filter(c => c.name !== "Turno Mañana");
 
   const options = permitCategories
     .map(cat => `<option value="${cat.name}">${cat.name}</option>`)
@@ -757,7 +789,6 @@ function renderPermits() {
   `;
 
   const rows = document.getElementById("permitRows");
-
   if (!rows) return;
 
   if (permitsSorted.length === 0) {
@@ -826,6 +857,7 @@ function addExtraHours() {
   });
 
   saveData();
+
   document.getElementById("extraDate").value = "";
   document.getElementById("extraHours").value = "";
   document.getElementById("extraNote").value = "";
@@ -868,6 +900,44 @@ function deleteExtraHours(index) {
   renderCalendar();
 }
 
+function renderCategoryColorSettings() {
+  const box = document.getElementById("categoryColorSettings");
+  if (!box) return;
+
+  box.innerHTML = getCategories().map(cat => `
+    <div class="color-setting-row">
+      <span>${cat.name}</span>
+      <input type="color" value="${cat.color}" data-color-category="${cat.name}">
+    </div>
+  `).join("");
+}
+
+function saveCategoryColors() {
+  document.querySelectorAll("[data-color-category]").forEach(input => {
+    const name = input.getAttribute("data-color-category");
+    data.categoryColors[name] = input.value;
+  });
+
+  saveData();
+  fillCategorySelects();
+  renderCategoryColorSettings();
+  renderDashboard();
+  renderCalendar();
+  alert("Colores guardados.");
+}
+
+function resetCategoryColors() {
+  if (!confirm("¿Restablecer todos los colores?")) return;
+
+  data.categoryColors = {};
+  saveData();
+
+  fillCategorySelects();
+  renderCategoryColorSettings();
+  renderDashboard();
+  renderCalendar();
+}
+
 function getExtraHoursForDate(dateKey) {
   return data.extraHours.filter(e => e.date === dateKey);
 }
@@ -888,9 +958,7 @@ function calculateUsed(categoryName) {
     const marks = Array.isArray(dayMarks) ? dayMarks : [dayMarks];
 
     marks.forEach(item => {
-      if (item.category === categoryName) {
-        total += Number(item.amount || 1);
-      }
+      if (item.category === categoryName) total += Number(item.amount || 1);
     });
   });
 
