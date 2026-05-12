@@ -1,6 +1,6 @@
 /* =========================
    CALENDARIO LABORAL PRO
-   STYLES.CSS v18 LUXURY PWA
+   STYLES.CSS v19 LUXURY PWA
 ========================= */
 
 * {
@@ -20,8 +20,6 @@
   --radius: 28px;
   --shadow: 0 20px 50px rgba(0,0,0,0.45);
 }
-
-/* BODY */
 
 body {
   margin: 0;
@@ -182,6 +180,7 @@ h3 {
   margin-bottom: 18px;
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 /* SELECTOR */
@@ -395,6 +394,59 @@ option {
 
 .mini-day strong {
   color: white;
+}
+
+/* CATEGORY COLOR SETTINGS */
+
+#categoryColorSettings {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.color-setting-row {
+  display: grid;
+  grid-template-columns: 1fr 74px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.055);
+  border: 1px solid rgba(214,181,109,0.18);
+}
+
+.color-setting-row span {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.color-setting-row input[type="color"] {
+  width: 74px;
+  height: 42px;
+  padding: 0;
+  margin: 0;
+  border-radius: 14px;
+  border: 2px solid rgba(214,181,109,0.45);
+  background: transparent;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.20);
+}
+
+.color-setting-row input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-setting-row input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 11px;
+}
+
+.color-setting-row input[type="color"]::-moz-color-swatch {
+  border: none;
+  border-radius: 11px;
 }
 
 /* BUTTONS */
